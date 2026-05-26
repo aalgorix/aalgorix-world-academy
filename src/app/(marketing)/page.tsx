@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 import { MarketingNav } from "./marketing-nav";
@@ -538,14 +539,22 @@ export default function MarketingPage() {
       <footer className="bg-slate-950 text-slate-300">
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
           <div className="grid gap-12 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="lg:col-span-1">
-              <p className="text-lg font-extrabold tracking-tight text-white">
-                AALGORIX WORLD ACADEMY
-              </p>
-              <p className="mt-4 text-sm leading-relaxed text-slate-400">
-                Premium accredited online schooling for global families, homeschoolers, and
-                student-athletes pursuing international university admissions.
-              </p>
+            <div className="flex items-start lg:col-span-1">
+              <Link
+                href="/"
+                className="inline-flex transition-all duration-200 active:scale-[0.98]"
+                aria-label="Aalgorix World Academy home"
+              >
+                <span className="relative block h-36 w-36 shrink-0">
+                  <Image
+                    src="/brand/awa-logo-circular.svg"
+                    alt="Aalgorix World Academy"
+                    fill
+                    sizes="144px"
+                    className="object-contain h-full w-full"
+                  />
+                </span>
+              </Link>
             </div>
             <div>
               <h3 className="text-sm font-bold uppercase tracking-wider text-white">

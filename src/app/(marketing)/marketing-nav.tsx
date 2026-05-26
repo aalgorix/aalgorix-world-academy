@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
@@ -57,13 +58,30 @@ function MenuIcon() {
   );
 }
 
+const BRAND_ALT = "Aalgorix World Academy";
+
 function BrandMark() {
   return (
-    <span className="text-sm font-extrabold tracking-tight text-slate-900 sm:text-base">
-      <span className="bg-gradient-to-r from-indigo-700 to-violet-700 bg-clip-text text-transparent">
-        AALGORIX
-      </span>{" "}
-      <span>WORLD ACADEMY</span>
+    <span className="relative block h-[72px] w-52 shrink-0 sm:w-68">
+      <Image
+        src="/brand/awa-logo.png"
+        alt={BRAND_ALT}
+        fill
+        priority
+        unoptimized
+        sizes="(max-width: 640px) 160px, 208px"
+        className="object-contain block dark:hidden"
+      />
+      <Image
+        src="/brand/awa-logo.png"
+        alt=""
+        fill
+        priority
+        unoptimized
+        sizes="(max-width: 640px) 160px, 208px"
+        className="object-contain hidden dark:block"
+        aria-hidden
+      />
     </span>
   );
 }
@@ -240,15 +258,9 @@ export function MarketingNav() {
         <div className="mx-auto flex h-16 max-w-7xl items-center gap-3 px-4 sm:gap-4 sm:px-6 lg:px-8">
           <Link
             href="/"
-            className="relative z-10 min-w-0 flex-1 truncate transition-all duration-200 active:scale-[0.98] pointer-events-auto"
+            className="relative z-10 flex shrink-0 items-center transition-all duration-200 active:scale-[0.98] pointer-events-auto"
           >
-            <span className="block truncate text-sm font-extrabold tracking-tight text-slate-900 sm:text-base">
-              <span className="bg-gradient-to-r from-indigo-700 to-violet-700 bg-clip-text text-transparent">
-                AALGORIX
-              </span>{" "}
-              <span className="hidden sm:inline">WORLD ACADEMY</span>
-              <span className="sm:hidden">AWA</span>
-            </span>
+            <BrandMark />
           </Link>
 
           <nav

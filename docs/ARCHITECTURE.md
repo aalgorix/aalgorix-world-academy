@@ -12,7 +12,8 @@ Target layout for Next.js App Router (TypeScript). Route groups `(name)` do not 
 aalgorix-world-academy/
 ├── .env.local.example                 # Supabase + Stripe public/secret keys (never commit .env.local)
 ├── docs/
-│   └── ARCHITECTURE.md                # This file
+│   ├── ARCHITECTURE.md                # This file
+│   └── PROJECT_TREE.md                # Annotated source tree (per-file purpose)
 ├── supabase/
 │   ├── config.toml                    # Supabase CLI (optional, later)
 │   ├── migrations/
