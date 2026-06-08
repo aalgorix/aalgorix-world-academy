@@ -31,7 +31,7 @@ function readSiteOrigin(
   return fallback;
 }
 
-/** Canonical marketing site origin (www.aalgorixacademy.com in production). */
+/** Canonical marketing site origin (www.aalgorixworldacademy.com in production). */
 export function getMarketingOrigin(): string {
   return readSiteOrigin(
     "MARKETING_SITE_URL",
@@ -41,7 +41,7 @@ export function getMarketingOrigin(): string {
 }
 
 /**
- * Authenticated app origin (app.aalgorixacademy.com in production).
+ * Authenticated app origin (app.aalgorixworldacademy.com in production).
  * Falls back to marketing origin when unset (local monolith dev).
  */
 export function getAppOrigin(): string {
@@ -70,8 +70,27 @@ export function normalizeHost(hostHeader: string): string {
   return host;
 }
 
-function hostFromOrigin(origin: string): string {
+export function hostFromOrigin(origin: string): string {
   return normalizeHost(new URL(origin).host);
+}
+
+/** Strips a leading `www.` so apex and www hosts compare equal. */
+export function stripWww(host: string): string {
+  const normalized = normalizeHost(host);
+  return normalized.startsWith("www.") ? normalized.slice(4) : normalized;
+}
+
+/** True when the request host matches a configured origin (www and apex equivalent). */
+export function hostsMatchConfiguredOrigin(
+  requestHost: string,
+  origin: string,
+): boolean {
+  const host = normalizeHost(requestHost);
+  const configured = hostFromOrigin(origin);
+  if (host === configured) {
+    return true;
+  }
+  return stripWww(host) === stripWww(configured);
 }
 
 export function getRequestHost(request: { headers: Headers }): string {
@@ -86,14 +105,14 @@ export function isMarketingHost(hostHeader: string): boolean {
   if (!isDualDomainMode()) {
     return true;
   }
-  return normalizeHost(hostHeader) === hostFromOrigin(getMarketingOrigin());
+  return hostsMatchConfiguredOrigin(hostHeader, getMarketingOrigin());
 }
 
 export function isAppHost(hostHeader: string): boolean {
   if (!isDualDomainMode()) {
-    return true;
+    return false;
   }
-  return normalizeHost(hostHeader) === hostFromOrigin(getAppOrigin());
+  return hostsMatchConfiguredOrigin(hostHeader, getAppOrigin());
 }
 
 export function isMarketingPath(pathname: string): boolean {
@@ -126,7 +145,7 @@ export function appUrl(path = ""): string {
 }
 
 /**
- * Shared parent domain for Supabase auth cookies (e.g. `.aalgorixacademy.com`).
+ * Shared parent domain for Supabase auth cookies (e.g. `.aalgorixworldacademy.com`).
  * Set AUTH_COOKIE_DOMAIN in production so sessions work across subdomains.
  */
 export function getAuthCookieDomain(): string | undefined {

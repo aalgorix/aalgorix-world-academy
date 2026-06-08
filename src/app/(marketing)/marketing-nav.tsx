@@ -4,6 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { appAuthHref, isExternalAuthHref } from "@/lib/app-auth-href";
+
 type NavLink = Readonly<{
   href: string;
   label: string;
@@ -251,6 +253,34 @@ function normalizeMenuTap(event: React.MouseEvent<HTMLButtonElement>) {
   event.stopPropagation();
 }
 
+function AuthNavLink({
+  path,
+  className,
+  children,
+  onClick,
+}: {
+  path: "/login" | "/signup";
+  className: string;
+  children: React.ReactNode;
+  onClick?: () => void;
+}) {
+  const href = appAuthHref(path);
+
+  if (isExternalAuthHref(href)) {
+    return (
+      <a href={href} className={className} onClick={onClick}>
+        {children}
+      </a>
+    );
+  }
+
+  return (
+    <Link href={href} className={className} onClick={onClick}>
+      {children}
+    </Link>
+  );
+}
+
 function NavTagBadge({ children }: { children: string }) {
   return <span className={navTagBadgeClassName}>{children ?? ""}</span>;
 }
@@ -481,20 +511,20 @@ function MobileNavPopover({
         </nav>
 
         <div className="space-y-1.5 border-t border-slate-100 px-2 py-2">
-          <Link
-            href="/login"
+          <AuthNavLink
+            path="/login"
             className="block w-full rounded-xl px-3 py-2.5 text-center text-sm font-semibold text-slate-800 transition-all duration-200 hover:bg-slate-50 hover:text-indigo-600 active:scale-[0.98]"
             onClick={onClose}
           >
             Sign In
-          </Link>
-          <Link
-            href="/signup"
+          </AuthNavLink>
+          <AuthNavLink
+            path="/signup"
             className={`${ctaClassName} w-full py-2.5 text-sm`}
             onClick={onClose}
           >
             Get Started
-          </Link>
+          </AuthNavLink>
         </div>
       </div>
     </div>
@@ -712,12 +742,12 @@ export function MarketingNav() {
         </div>
 
         <div className="hidden shrink-0 items-center justify-end gap-x-4 lg:flex">
-          <Link href="/login" className={linkClassName}>
+          <AuthNavLink path="/login" className={linkClassName}>
             Sign In
-          </Link>
-          <Link href="/signup" className={ctaClassName}>
+          </AuthNavLink>
+          <AuthNavLink path="/signup" className={ctaClassName}>
             Get Started
-          </Link>
+          </AuthNavLink>
         </div>
 
         <div className="relative z-50 ml-auto shrink-0 pointer-events-auto lg:hidden">
