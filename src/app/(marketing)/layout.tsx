@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
+import { FloatingVideoBanner } from "./floating-video-banner";
 import { MarketingFooter } from "./marketing-footer";
 
 export const metadata: Metadata = {
@@ -13,6 +14,7 @@ export default function MarketingLayout({ children }: { children: ReactNode }) {
     <div className="flex min-h-full flex-col bg-white text-slate-900">
       {children}
       <MarketingFooter />
+      <FloatingVideoBanner />
     </div>
   );
 }

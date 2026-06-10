@@ -132,7 +132,7 @@ export default function AiTutorPage() {
 
               <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
                 <a
-                  href="https://aimasterji.professorsai.org/"
+                  href="/ai-voice-assistant"
                   target="_blank"
                   rel="noopener noreferrer"
                   className={btnPrimary}

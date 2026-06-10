@@ -240,9 +240,9 @@ function BrandMark() {
     <Image
       src="/brand/awa-logo.svg"
       alt="Aalgorix World Academy Logo"
-      width={150}
-      height={40}
-      className="h-8 w-auto sm:h-10"
+      width={180}
+      height={48}
+      className="h-10 w-auto sm:h-12"
       priority
     />
   );
