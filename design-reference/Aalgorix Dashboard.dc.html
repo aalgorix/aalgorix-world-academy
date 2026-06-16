@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:#F6F7FB;color:#1A1B2E;-webkit-font-smoothing:antialiased}
+::selection{background:#DADCFF}
+.scroll::-webkit-scrollbar{width:8px;height:8px}
+.scroll::-webkit-scrollbar-thumb{background:#D6D8E4;border-radius:99px}
+.scroll::-webkit-scrollbar-track{background:transparent}
+input::placeholder,textarea::placeholder{color:#A2A7BE}
+@keyframes floatUp{from{opacity:.4;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulseDot{0%,100%{opacity:1}50%{opacity:.35}}
+@keyframes blink{0%,100%{opacity:.25}50%{opacity:1}}
+</style>
+</helmet>
+
+<div ref="{{ setRoot }}" class="scroll" style="display:flex;min-height:100vh;width:100%;background:#F6F7FB;position:relative;font-family:'Plus Jakarta Sans',sans-serif">
+
+  <sc-if value="{{ showSidebar }}">
+  <aside style="width: {{ sidebarWidth }};flex:0 0 auto;height:100vh;position:sticky;top:0;background:#FFFFFF;border-right:1px solid #ECEDF3;display:flex;flex-direction:column;padding:22px 16px;gap:8px;z-index:20">
+    <div style="display:flex;align-items:center;gap:11px;padding:4px 6px 14px 6px;justify-content: {{ navJustify }}">
+      <div style="width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,#6366F1,#8B5CF6);display:flex;align-items:center;justify-content:center;flex:0 0 auto;box-shadow:0 6px 16px rgba(99,102,241,.35)">{{ ic.logo }}</div>
+      <sc-if value="{{ showLabels }}"><div style="line-height:1.1"><div style="font:800 15px 'Plus Jakarta Sans';letter-spacing:-.2px">Aalgorix</div><div style="font:600 10.5px 'JetBrains Mono';color:#9AA0B8;letter-spacing:.5px;text-transform:uppercase">World Academy</div></div></sc-if>
+    </div>
+
+    <div class="scroll" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:3px;margin:0 -4px;padding:0 4px">
+      <sc-for list="{{ navItems }}" as="n" hint-placeholder-count="12">
+        <button onClick="{{ n.onClick }}" title="{{ n.label }}" style="display:flex;align-items:center;gap:13px;width:100%;padding:11px 12px;border:none;border-radius:12px;cursor:pointer;font:600 14px 'Plus Jakarta Sans';text-align:left;transition:background .15s,color .15s;justify-content: {{ navJustify }};background: {{ n.bg }};color: {{ n.color }}">
+          {{ n.icon }}
+          <sc-if value="{{ showLabels }}"><span style="flex:1;white-space:nowrap">{{ n.label }}</span></sc-if>
+          <sc-if value="{{ n.showBadge }}"><span style="background:#FB7185;color:#fff;font:700 10px 'Plus Jakarta Sans';padding:2px 7px;border-radius:99px">{{ n.badge }}</span></sc-if>
+        </button>
+      </sc-for>
+    </div>
+
+    <sc-if value="{{ showLabels }}">
+    <div style="margin-top:auto;background:linear-gradient(160deg,#11132B,#272A52);border-radius:18px;padding:16px;color:#fff;position:relative;overflow:hidden">
+      <div style="position:absolute;top:-30px;right:-30px;width:90px;height:90px;border-radius:50%;background:radial-gradient(circle,rgba(139,92,246,.6),transparent 70%)"></div>
+      <div style="display:flex;align-items:center;gap:8px;position:relative">{{ ic.premiumSparkle }}<span style="font:700 13px 'Plus Jakarta Sans'">Go Premium</span></div>
+      <div style="font:500 11.5px 'Plus Jakarta Sans';color:#B9BCE0;margin:6px 0 11px;position:relative">Unlock 1-on-1 mentor sessions & advanced AI</div>
+      <button onClick="{{ noop }}" style="position:relative;width:100%;border:none;background:#fff;color:#11132B;font:700 12.5px 'Plus Jakarta Sans';padding:9px;border-radius:10px;cursor:pointer">Upgrade plan</button>
+    </div>
+    </sc-if>
+  </aside>
+  </sc-if>
+
+  <div style="flex:1;min-width:0;display:flex;flex-direction:column">
+
+    <header style="position:sticky;top:0;z-index:15;background:rgba(246,247,251,.82);backdrop-filter:blur(12px);border-bottom:1px solid #ECEDF3;padding: {{ headerPad }};display:flex;align-items:center;gap:14px">
+      <sc-if value="{{ showBottomNav }}">
+        <button onClick="{{ openNav }}" style="width:40px;height:40px;border-radius:11px;border:1px solid #ECEDF3;background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:0 0 auto;color:#41435F">{{ ic.menu }}</button>
+      </sc-if>
+
+      <sc-if value="{{ showSearch }}">
+      <div style="flex:1;max-width:440px;display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #ECEDF3;border-radius:13px;padding:10px 14px">
+        {{ ic.search }}
+        <input placeholder="Search courses, lessons, assignments…" style="border:none;outline:none;background:transparent;flex:1;font:500 13.5px 'Plus Jakarta Sans';color:#1A1B2E"/>
+        <kbd style="font:600 10.5px 'JetBrains Mono';color:#9AA0B8;background:#F1F2F7;border-radius:6px;padding:2px 6px">⌘K</kbd>
+      </div>
+      </sc-if>
+      <sc-if value="{{ showBottomNav }}">
+        <div style="flex:1;font:800 16px 'Plus Jakarta Sans'">{{ viewTitle }}</div>
+      </sc-if>
+
+      <div style="display:flex;align-items:center;gap:10px;margin-left:auto;flex:0 0 auto">
+        <button onClick="{{ goTutor }}" style="display:flex;align-items:center;gap:8px;border:none;background:linear-gradient(135deg,#6366F1,#8B5CF6);color:#fff;font:700 13px 'Plus Jakarta Sans';padding:10px 15px;border-radius:12px;cursor:pointer;box-shadow:0 6px 16px rgba(99,102,241,.32)">
+          {{ ic.sparkleW }}<sc-if value="{{ showLabels }}"><span>Ask AI Tutor</span></sc-if>
+        </button>
+        <button onClick="{{ noop }}" style="position:relative;width:42px;height:42px;border-radius:12px;border:1px solid #ECEDF3;background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer">{{ ic.bell }}<span style="position:absolute;top:9px;right:10px;width:8px;height:8px;background:#FB7185;border:2px solid #fff;border-radius:50%"></span></button>
+        <button onClick="{{ goSettings }}" style="display:flex;align-items:center;gap:9px;border:1px solid #ECEDF3;background:#fff;padding:5px 5px;border-radius:13px;cursor:pointer">
+          <div style="width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,#FBBF24,#F59E0B);display:flex;align-items:center;justify-content:center;color:#fff;font:800 14px 'Plus Jakarta Sans'">{{ initial }}</div>
+          <sc-if value="{{ showProfileText }}"><div style="text-align:left;padding-right:6px"><div style="font:700 13px 'Plus Jakarta Sans';line-height:1.1">{{ name }}</div><div style="font:600 10.5px 'JetBrains Mono';color:#9AA0B8">{{ gradeLabel }}</div></div></sc-if>
+        </button>
+      </div>
+    </header>
+
+    <main class="scroll" style="flex:1;overflow-y:auto;padding: {{ contentPad }};padding-bottom: {{ contentPadBottom }}">
+      <div style="max-width:1320px;margin:0 auto;width:100%">
+
+        <!-- ===================== DASHBOARD ===================== -->
+        <sc-if value="{{ isDashboard }}">
+        <div style="display:flex;flex-direction:column;gap:20px;animation:floatUp .4s ease both">
+
+          <div style="position:relative;overflow:hidden;border-radius:26px;background:linear-gradient(125deg,#5B5BF0 0%,#7158F0 48%,#8B5CF6 100%);color:#fff;padding: {{ heroPad }};box-shadow:0 18px 44px rgba(99,102,241,.30)">
+            <div style="position:absolute;top:-60px;right:-30px;width:240px;height:240px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.18),transparent 65%)"></div>
+            <div style="position:absolute;bottom:-90px;right:120px;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(34,211,238,.30),transparent 65%)"></div>
+            <div style="position:relative;display:flex;flex-wrap:wrap;gap:28px;align-items:center;justify-content:space-between">
+              <div style="flex:1 1 360px;min-width:0">
+                <div style="font:600 11px 'JetBrains Mono';letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.78)">{{ todayLong }}</div>
+                <h1 style="font:800 clamp(26px,3.4vw,38px) 'Plus Jakarta Sans';letter-spacing:-.8px;margin:9px 0 8px">Welcome back, {{ name }} 👋</h1>
+                <p style="font:500 15px 'Plus Jakarta Sans';color:rgba(255,255,255,.85);max-width:440px;line-height:1.5">{{ motivation }}</p>
+                <div style="display:flex;flex-wrap:wrap;gap:9px;margin:18px 0 22px">
+                  <div style="display:flex;align-items:center;gap:7px;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.18);padding:7px 13px;border-radius:99px;font:700 12.5px 'Plus Jakarta Sans'">{{ ic.student }}{{ gradeLabel }}</div>
+                  <div style="display:flex;align-items:center;gap:7px;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.18);padding:7px 13px;border-radius:99px;font:700 12.5px 'Plus Jakarta Sans'">{{ ic.cal }}{{ yearLabel }}</div>
+                  <div style="display:flex;align-items:center;gap:7px;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.18);padding:7px 13px;border-radius:99px;font:700 12.5px 'Plus Jakarta Sans'">{{ ic.fire }}{{ streakDays }}-day streak</div>
+                </div>
+                <div style="display:flex;flex-wrap:wrap;gap:11px">
+                  <button onClick="{{ goCourses }}" style="display:flex;align-items:center;gap:9px;border:none;background:#fff;color:#5B5BF0;font:700 14px 'Plus Jakarta Sans';padding:13px 22px;border-radius:13px;cursor:pointer;box-shadow:0 8px 20px rgba(0,0,0,.14)">{{ ic.play }}Continue learning</button>
+                  <button onClick="{{ goCalendar }}" style="display:flex;align-items:center;gap:9px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.1);color:#fff;font:700 14px 'Plus Jakarta Sans';padding:13px 20px;border-radius:13px;cursor:pointer">View timetable</button>
+                </div>
+              </div>
+              <div style="flex:0 0 auto;display:flex;gap:14px;align-items:stretch">
+                <div style="background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.2);border-radius:20px;padding:20px 22px;backdrop-filter:blur(6px);text-align:center;min-width:150px">
+                  <div style="font:600 11px 'JetBrains Mono';letter-spacing:.5px;text-transform:uppercase;color:rgba(255,255,255,.78);margin-bottom:12px">Weekly goal</div>
+                  <div style="position:relative;width:104px;height:104px;margin:0 auto">
+                    <svg width="104" height="104" viewBox="0 0 104 104"><circle cx="52" cy="52" r="44" fill="none" stroke="rgba(255,255,255,.22)" stroke-width="9"/><circle cx="52" cy="52" r="44" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-dasharray="{{ goalC }}" stroke-dashoffset="{{ goalOff }}" transform="rotate(-90 52 52)"/></svg>
+                    <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center"><div style="font:800 24px 'Plus Jakarta Sans'">{{ goalPct }}%</div><div style="font:600 10px 'Plus Jakarta Sans';color:rgba(255,255,255,.8)">{{ goalDone }}/{{ goalTotal }} days</div></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(178px,1fr));gap:16px">
+            <sc-for list="{{ stats }}" as="s" hint-placeholder-count="5">
+              <div style="background:#fff;border:1px solid #ECEDF3;border-radius:20px;padding:18px;box-shadow:0 1px 2px rgba(20,22,46,.04),0 6px 18px rgba(20,22,46,.035);display:flex;flex-direction:column;gap:13px">
+                <div style="display:flex;align-items:flex-start;justify-content:space-between">
+                  <sc-if value="{{ s.isRing }}">
+                    <div style="position:relative;width:54px;height:54px">
+                      <svg width="54" height="54" viewBox="0 0 54 54"><circle cx="27" cy="27" r="23" fill="none" stroke="#EEF0F5" stroke-width="6"/><circle cx="27" cy="27" r="23" fill="none" stroke="{{ s.solid }}" stroke-width="6" stroke-linecap="round" stroke-dasharray="{{ s.C }}" stroke-dashoffset="{{ s.off }}" transform="rotate(-90 27 27)"/></svg>
+                      <span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:800 13px 'Plus Jakarta Sans';color:#1A1B2E">{{ s.value }}</span>
+                    </div>
+                  </sc-if>
+                  <sc-if value="{{ s.isIcon }}">
+                    <div style="width:46px;height:46px;border-radius:13px;background:{{ s.bg }};display:flex;align-items:center;justify-content:center">{{ s.iconEl }}</div>
+                  </sc-if>
+                  <div style="display:flex;align-items:center;gap:3px;padding:4px 8px;border-radius:99px;background:#E9F9F1;color:#0E9F6E;font:700 11.5px 'Plus Jakarta Sans'">{{ ic.trendUp }}{{ s.trend }}</div>
+                </div>
+                <div>
+                  <sc-if value="{{ s.isIcon }}"><div style="font:800 24px 'Plus Jakarta Sans';color:#1A1B2E;line-height:1">{{ s.big }}</div></sc-if>
+                  <div style="font:600 13px 'Plus Jakarta Sans';color:#6B6F8A;margin-top:6px">{{ s.label }}</div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="display:flex;flex-wrap:wrap;gap:20px">
+            <div style="flex:1 1 540px;min-width:0;display:flex;flex-direction:column;gap:20px">
+
+              <div style="background:#fff;border:1px solid #ECEDF3;border-radius:22px;padding:22px;box-shadow:0 1px 2px rgba(20,22,46,.04),0 6px 18px rgba(20,22,46,.035)">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+                  <div><div style="font:800 17px 'Plus Jakarta Sans'">Today's schedule</div><div style="font:500 12.5px 'Plus Jakarta Sans';color:#9AA0B8;margin-top:2px">{{ scheduleCount }} live sessions today</div></div>
+                  <button onClick="{{ goLive }}" style="display:flex;align-items:center;gap:5px;border:1px solid #ECEDF3;background:#fff;color:#5B5BF0;font:700 12.5px 'Plus Jakarta Sans';padding:8px 13px;border-radius:10px;cursor:pointer">View all{{ ic.arrow }}</button>
+                </div>
+                <div style="display:flex;flex-direction:column">
+                  <sc-for list="{{ schedule }}" as="c" hint-placeholder-count="3">
+                    <div style="display:flex;gap:15px;align-items:stretch">
+                      <div style="flex:0 0 60px;text-align:right;padding-top:2px"><div style="font:800 14px 'Plus Jakarta Sans';color:#1A1B2E">{{ c.time }}</div><div style="font:600 10px 'JetBrains Mono';color:#9AA0B8">{{ c.ampm }}</div></div>
+                      <div style="flex:0 0 auto;display:flex;flex-direction:column;align-items:center"><span style="width:13px;height:13px;border-radius:50%;border:3px solid {{ c.solid }};background:#fff;margin-top:4px"></span><span style="flex:1;width:2px;background:#EDEEF4"></span></div>
+                      <div style="flex:1;min-width:0;margin-bottom:14px;background:{{ c.bg }};border:1px solid {{ c.border }};border-radius:14px;padding:13px 15px;display:flex;align-items:center;gap:13px">
+                        <div style="width:38px;height:38px;border-radius:11px;background:{{ c.grad }};display:flex;align-items:center;justify-content:center;flex:0 0 auto">{{ c.iconEl }}</div>
+                        <div style="flex:1;min-width:0"><div style="font:700 14px 'Plus Jakarta Sans';color:#1A1B2E">{{ c.subject }}</div><div style="font:500 12px 'Plus Jakarta Sans';color:#6B6F8A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ c.teacher }}</div></div>
+                        <sc-if value="{{ c.isLive }}"><button onClick="{{ goLive }}" style="display:flex;align-items:center;gap:6px;border:none;background:{{ c.solid }};color:#fff;font:700 12px 'Plus Jakarta Sans';padding:9px 14px;border-radius:10px;cursor:pointer;flex:0 0 auto"><span style="width:7px;height:7px;border-radius:50%;background:#fff;animation:pulseDot 1.2s infinite"></span>Join</button></sc-if>
+                        <sc-if value="{{ c.isSoon }}"><span style="font:700 11.5px 'Plus Jakarta Sans';color:{{ c.solid }};background:#fff;border:1px solid {{ c.border }};padding:7px 12px;border-radius:10px;flex:0 0 auto">{{ c.status }}</span></sc-if>
+                        <sc-if value="{{ c.isDone }}"><span style="display:flex;align-items:center;gap:5px;font:700 11.5px 'Plus Jakarta Sans';color:#0E9F6E;flex:0 0 auto">{{ ic.check }}Done</span></sc-if>
+                      </div>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+
+              <div>
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+                  <div style="font:800 17px 'Plus Jakarta Sans'">Continue learning</div>
+                  <button onClick="{{ goCourses }}" style="border:none;background:transparent;color:#5B5BF0;font:700 12.5px 'Plus Jakarta Sans';cursor:pointer">See all courses</button>
+                </div>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px">
+                  <sc-for list="{{ continueCourses }}" as="c" hint-placeholder-count="4">
+                    <div style="background:#fff;border:1px solid #ECEDF3;border-radius:20px;overflow:hidden;box-shadow:0 1px 2px rgba(20,22,46,.04),0 6px 18px rgba(20,22,46,.035);display:flex;flex-direction:column">
+                      <div style="height:84px;background:{{ c.grad }};position:relative;display:flex;align-items:center;padding:0 16px">
+                        <div style="position:absolute;top:-20px;right:-14px;width:78px;height:78px;border-radius:50%;background:rgba(255,255,255,.16)"></div>
+                        <div style="width:44px;height:44px;border-radius:13px;background:rgba(255,255,255,.22);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center">{{ c.iconEl }}</div>
+                        <span style="position:absolute;top:12px;right:13px;font:700 11px 'Plus Jakarta Sans';color:#fff;background:rgba(0,0,0,.16);padding:4px 9px;border-radius:99px">{{ c.progress }}%</span>
+                      </div>
+                      <div style="padding:15px 16px 16px;display:flex;flex-direction:column;gap:10px;flex:1">
+                        <div><div style="font:700 15px 'Plus Jakarta Sans'">{{ c.name }}</div><div style="font:500 11.5px 'Plus Jakarta Sans';color:#9AA0B8;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ c.lesson }}</div></div>
+                        <div style="height:7px;background:#EEF0F5;border-radius:99px;overflow:hidden;margin-top:2px"><div style="height:100%;width: {{ c.progressW }};background:{{ c.grad }};border-radius:99px"></div></div>
+                        <button onClick="{{ c.onClick }}" style="margin-top:auto;display:flex;align-items:center;justify-content:center;gap:7px;border:none;background:{{ c.bg }};color:{{ c.solid }};font:700 13px 'Plus Jakarta Sans';padding:10px;border-radius:11px;cursor:pointer">{{ c.playEl }}Continue</button>
+                      </div>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+
+              <div style="background:#fff;border:1px solid #ECEDF3;border-radius:22px;padding:22px;box-shadow:0 1px 2px rgba(20,22,46,.04),0 6px 18px rgba(20,22,46,.035)">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px"><div style="font:800 17px 'Plus Jakarta Sans'">Performance analytics</div><div style="font:600 11px 'JetBrains Mono';color:#9AA0B8">LAST 7 WEEKS</div></div>
+                <div style="display:flex;flex-wrap:wrap;gap:24px;margin-top:14px">
+                  <div style="flex:1 1 240px;min-width:0">
+                    <div style="font:600 12.5px 'Plus Jakarta Sans';color:#6B6F8A;margin-bottom:14px">Weekly learning time (hrs)</div>
+                    <div style="display:flex;align-items:flex-end;gap:10px;height:130px">
+                      <sc-for list="{{ weeklyTime }}" as="b" hint-placeholder-count="7">
+                        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;height:100%;justify-content:flex-end">
+                          <div style="font:700 10.5px 'JetBrains Mono';color:#41435F">{{ b.h }}</div>
+                          <div style="width:100%;max-width:26px;height: {{ b.heightPct }};background:{{ b.fill }};border-radius:8px 8px 4px 4px;min-height:6px"></div>
+                          <div style="font:600 10.5px 'Plus Jakarta Sans';color:#9AA0B8">{{ b.day }}</div>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </div>
+                  <div style="flex:1 1 240px;min-width:0">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px"><div style="font:600 12.5px 'Plus Jakarta Sans';color:#6B6F8A">Quiz score trend</div><div style="font:800 14px 'Plus Jakarta Sans';color:#0E9F6E">↑ {{ quizLatest }}%</div></div>
+                    <svg viewBox="0 0 240 130" style="width:100%;height:130px;overflow:visible">
+                      <defs><linearGradient id="qg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8B5CF6" stop-opacity=".28"/><stop offset="1" stop-color="#8B5CF6" stop-opacity="0"/></linearGradient></defs>
+                      <path d="{{ quizArea }}" fill="url(#qg)"></path>
+                      <path d="{{ quizLine }}" fill="none" stroke="#8B5CF6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
+                      <sc-for list="{{ quizPts }}" as="p" hint-placeholder-count="7"><circle cx="{{ p.x }}" cy="{{ p.y }}" r="3.5" fill="#fff" stroke="#8B5CF6" stroke-width="2.5"></circle></sc-for>
+                    </svg>
+                  </div>
+                </div>
+                <div style="border-top:1px solid #F0F1F6;margin-top:18px;padding-top:18px;display:flex;flex-direction:column;gap:13px">
+                  <div style="font:600 12.5px 'Plus Jakarta Sans';color:#6B6F8A">Subject-wise performance</div>
+                  <sc-for list="{{ subjectPerf }}" as="p" hint-placeholder-count="5">
+                    <div style="display:flex;align-items:center;gap:13px">
+                      <div style="flex:0 0 96px;font:600 12.5px 'Plus Jakarta Sans';color:#41435F">{{ p.name }}</div>
+                      <div style="flex:1;height:9px;background:#EEF0F5;border-radius:99px;overflow:hidden"><div style="height:100%;width: {{ p.scoreW }};background:{{ p.grad }};border-radius:99px"></div></div>
+                      <div style="flex:0 0 38px;text-align:right;font:800 13px 'Plus Jakarta Sans';color:#1A1B2E">{{ p.score }}%</div>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </div>
+
+            <div style="flex:1 1 300px;min-width:0;display:flex;flex-direction:column;gap:20px">
+
+              <div style="position:relative;overflow:hidden;border-radius:22px;background:linear-gradient(160deg,#15172E 0%,#241F4D 60%,#3A2A66 100%);color:#fff;padding:22px;box-shadow:0 14px 34px rgba(30,20,70,.4)">
+                <div style="position:absolute;top:-40px;right:-30px;width:140px;height:140px;border-radius:50%;background:radial-gradient(circle,rgba(139,92,246,.55),transparent 65%)"></div>
+                <div style="position:relative">
+                  <div style="display:flex;align-items:center;gap:11px;margin-bottom:14px">
+                    <div style="width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,#22D3EE,#8B5CF6);display:flex;align-items:center;justify-content:center;box-shadow:0 6px 16px rgba(139,92,246,.5)">{{ ic.tutorBig }}</div>
+                    <div><div style="font:800 16px 'Plus Jakarta Sans'">Aalgorix AI Tutor</div><div style="display:flex;align-items:center;gap:5px;font:600 11px 'JetBrains Mono';color:#A8AECF"><span style="width:7px;height:7px;border-radius:50%;background:#34D399;animation:pulseDot 1.4s infinite"></span>Online · ready to help</div></div>
+                  </div>
+                  <p style="font:500 13px 'Plus Jakarta Sans';color:#C3C7E6;line-height:1.5;margin-bottom:15px">Stuck on a problem? I can explain concepts, check homework, and build practice questions just for you.</p>
+                  <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:16px">
+                    <sc-for list="{{ tutorChips }}" as="t" hint-placeholder-count="4"><span style="font:600 11.5px 'Plus Jakarta Sans';background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.14);padding:6px 11px;border-radius:99px">{{ t }}</span></sc-for>
+                  </div>
+                  <div style="display:flex;gap:9px">
+                    <button onClick="{{ goTutor }}" style="flex:1;display:flex;align-items:center;justify-content:center;gap:7px;border:none;background:#fff;color:#241F4D;font:700 13px 'Plus Jakarta Sans';padding:11px;border-radius:12px;cursor:pointer">{{ ic.chat }}Chat now</button>
+                    <button onClick="{{ goTutor }}" style="flex:0 0 auto;display:flex;align-items:center;justify-content:center;gap:7px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:#fff;font:700 13px 'Plus Jakarta Sans';padding:11px 14px;border-radius:12px;cursor:pointer">{{ ic.mic }}Voice</button>
+                  </div>
+                </div>
+              </div>
+
+              <div style="background:#fff;border:1px solid #ECEDF3;border-radius:22px;padding:20px;box-shadow:0 1px 2px rgba(20,22,46,.04),0 6px 18px rgba(20,22,46,.035)">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:15px"><div style="font:800 16px 'Plus Jakarta Sans'">Pending assignments</div><span style="font:700 11.5px 'Plus Jakarta Sans';color:#5B5BF0;background:#EEF0FF;padding:3px 9px;border-radius:99px">{{ pendingCount }} due</span></div>
+                <div style="display:flex;flex-direction:column;gap:10px">
+                  <sc-for list="{{ dashAssignments }}" as="a" hint-placeholder-count="3">
+                    <div onClick="{{ goAssign }}" style="display:flex;align-items:center;gap:12px;padding:12px;border:1px solid #F0F1F6;border-radius:14px;cursor:pointer">
+                      <span style="width:9px;height:42px;border-radius:99px;background:{{ a.prioColor }};flex:0 0 auto"></span>
+                      <div style="flex:1;min-width:0"><div style="font:700 13.5px 'Plus Jakarta Sans';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ a.title }}</div><div style="font:500 11.5px 'Plus Jakarta Sans';color:#9AA0B8">{{ a.course }}</div></div>
+                      <div style="text-align:right;flex:0 0 auto"><div style="font:700 12px 'Plus Jakarta Sans';color:{{ a.dueColor }}">{{ a.due }}</div><div style="font:600 10px 'JetBrains Mono';color:#9AA0B8;text-transform:uppercase">{{ a.prio }}</div></div>
+                    </div>
+                  </sc-for>
+                </div>
+                <button onClick="{{ goAssign }}" style="width:100%;margin-top:13px;border:none;background:#1A1B2E;color:#fff;font:700 13px 'Plus Jakarta Sans';padding:11px;border-radius:12px;cursor:pointer">Submit an assignment</button>
+              </div>
+
+              <div style="background:#fff;border:1px solid #ECEDF3;border-radius:22px;padding:20px;box-shadow:0 1px 2px rgba(20,22,46,.04),0 6px 18px rgba(20,22,46,.035)">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px"><div style="font:800 16px 'Plus Jakarta Sans'">Notifications</div>{{ ic.bellSm }}</div>
+                <div style="display:flex;flex-direction:column;gap:3px">
+                  <sc-for list="{{ notifications }}" as="n" hint-placeholder-count="4">
+                    <div style="display:flex;gap:12px;padding:11px 0;border-bottom:1px solid #F4F5F9">
+                      <div style="width:36px;height:36px;border-radius:11px;background:{{ n.bg }};display:flex;align-items:center;justify-content:center;flex:0 0 auto">{{ n.iconEl }}</div>
+                      <div style="flex:1;min-width:0"><div style="font:600 13px 'Plus Jakarta Sans';color:#1A1B2E;line-height:1.35">{{ n.text }}</div><div style="font:600 10.5px 'JetBrains Mono';color:#9AA0B8;margin-top:3px">{{ n.time }}</div></div>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+
+              <div style="background:#fff;border:1px solid #ECEDF3;border-radius:22px;padding:20px;box-shadow:0 1px 2px rgba(20,22,46,.04),0 6px 18px rgba(20,22,46,.035)">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px"><div style="font:800 16px 'Plus Jakarta Sans'">Attendance</div><span style="font:800 18px 'Plus Jakarta Sans';color:#0E9F6E">96%</span></div>
+                <div style="display:flex;gap:6px;flex-wrap:wrap">
+                  <sc-for list="{{ attendanceMini }}" as="d" hint-placeholder-count="28"><span title="{{ d.label }}" style="width: calc((100% - 54px) / 10);aspect-ratio:1;border-radius:6px;background:{{ d.color }}"></span></sc-for>
+                </div>
+                <div style="display:flex;gap:16px;margin-top:14px;font:600 11px 'Plus Jakarta Sans';color:#9AA0B8">
+                  <span style="display:flex;align-items:center;gap:5px"><span style="width:9px;height:9px;border-radius:3px;background:#10B981"></span>Present</span>
+                  <span style="display:flex;align-items:center;gap:5px"><span style="width:9px;height:9px;border-radius:3px;background:#FB7185"></span>Absent</span>
+                  <span style="display:flex;align-items:center;gap:5px"><span style="width:9px;height:9px;border-radius:3px;background:#EEF0F5"></span>Holiday</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style="background:#fff;border:1px solid #ECEDF3;border-radius:22px;padding:22px;box-shadow:0 1px 2px rgba(20,22,46,.04),0 6px 18px rgba(20,22,46,.035)">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px"><div><div style="font:800 17px 'Plus Jakarta Sans'">Certificates & achievements</div><div style="font:500 12.5px 'Plus Jakarta Sans';color:#9AA0B8;margin-top:2px">Keep the streak going — you're 2 badges from Scholar status</div></div><button onClick="{{ goCerts }}" style="border:1px solid #ECEDF3;background:#fff;color:#5B5BF0;font:700 12.5px 'Plus Jakarta Sans';padding:8px 13px;border-radius:10px;cursor:pointer">View all</button></div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px">
+              <sc-for list="{{ badges }}" as="b" hint-placeholder-count="5">
+                <div style="border:1px solid #F0F1F6;border-radius:16px;padding:16px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:9px;background: {{ b.cardBg }};opacity: {{ b.opacity }}">
+                  <div style="width:54px;height:54px;border-radius:16px;background:{{ b.grad }};display:flex;align-items:center;justify-content:center;box-shadow:0 6px 16px {{ b.shadow }}">{{ b.iconEl }}</div>
+                  <div style="font:700 13.5px 'Plus Jakarta Sans'">{{ b.name }}</div>
+                  <div style="font:500 11px 'Plus Jakarta Sans';color:#9AA0B8">{{ b.desc }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+
+        </div>
+        </sc-if>
+        <!--MOREVIEWS-->
+
+      </div>
+    </main>
+  </div>
+
+  <sc-if value="{{ showBottomNav }}">
+  <nav style="position:fixed;bottom:0;left:0;right:0;z-index:30;background:rgba(255,255,255,.92);backdrop-filter:blur(14px);border-top:1px solid #ECEDF3;display:flex;justify-content:space-around;align-items:center;padding:8px 6px 10px">
+    <sc-for list="{{ bottomNav }}" as="n" hint-placeholder-count="5">
+      <button onClick="{{ n.onClick }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;border:none;background:transparent;cursor:pointer;padding:4px 0">
+        <sc-if value="{{ n.isCenter }}"><div style="width:46px;height:46px;border-radius:15px;background:linear-gradient(135deg,#6366F1,#8B5CF6);display:flex;align-items:center;justify-content:center;margin-top:-20px;box-shadow:0 8px 18px rgba(99,102,241,.4)">{{ ic.sparkleW }}</div></sc-if>
+        <sc-if value="{{ n.notCenter }}">{{ n.iconEl }}<span style="font:600 10px 'Plus Jakarta Sans';color: {{ n.color }}">{{ n.label }}</span></sc-if>
+      </button>
+    </sc-for>
+  </nav>
+  </sc-if>
+
+  <sc-if value="{{ navOpen }}">
+  <div onClick="{{ closeNav }}" style="position:fixed;inset:0;z-index:40;background:rgba(15,16,35,.5);backdrop-filter:blur(2px)"></div>
+  <div class="scroll" style="position:fixed;top:0;left:0;bottom:0;z-index:41;width:280px;background:#fff;padding:22px 16px;display:flex;flex-direction:column;gap:4px;overflow-y:auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 6px 16px">
+      <div style="display:flex;align-items:center;gap:11px"><div style="width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,#6366F1,#8B5CF6);display:flex;align-items:center;justify-content:center">{{ ic.logo }}</div><div style="line-height:1.1"><div style="font:800 15px 'Plus Jakarta Sans'">Aalgorix</div><div style="font:600 10px 'JetBrains Mono';color:#9AA0B8;text-transform:uppercase">World Academy</div></div></div>
+      <button onClick="{{ closeNav }}" style="width:36px;height:36px;border-radius:10px;border:1px solid #ECEDF3;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#41435F">{{ ic.x }}</button>
+    </div>
+    <sc-for list="{{ navItems }}" as="n" hint-placeholder-count="12">
+      <button onClick="{{ n.onClick }}" style="display:flex;align-items:center;gap:13px;width:100%;padding:12px;border:none;border-radius:12px;cursor:pointer;font:600 14.5px 'Plus Jakarta Sans';text-align:left;background: {{ n.bg }};color: {{ n.color }}">{{ n.icon }}<span style="flex:1">{{ n.label }}</span><sc-if value="{{ n.showBadge }}"><span style="background:#FB7185;color:#fff;font:700 10px 'Plus Jakarta Sans';padding:2px 7px;border-radius:99px">{{ n.badge }}</span></sc-if></button>
+    </sc-for>
+  </div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{
+  &quot;studentName&quot;: { &quot;editor&quot;:&quot;text&quot;, &quot;default&quot;:&quot;Sarah&quot;, &quot;tsType&quot;:&quot;string&quot; },
+  &quot;gradeLabel&quot;: { &quot;editor&quot;:&quot;text&quot;, &quot;default&quot;:&quot;Grade 7&quot;, &quot;tsType&quot;:&quot;string&quot; },
+  &quot;yearLabel&quot;: { &quot;editor&quot;:&quot;text&quot;, &quot;default&quot;:&quot;2025–2026&quot;, &quot;tsType&quot;:&quot;string&quot; },
+  &quot;streakDays&quot;: { &quot;editor&quot;:&quot;int&quot;, &quot;default&quot;:24, &quot;min&quot;:0, &quot;max&quot;:999, &quot;tsType&quot;:&quot;number&quot; }
+}">
+class Component extends DCLogic {
+  state = {
+    view: 'dashboard',
+    width: 1280,
+    navOpen: false,
+    ready: false,
+    chat: [],
+    chatInput: '',
+    typing: false,
+    submitted: {},
+  };
+
+  COLORS = {
+    math:    { solid:'#4F6BFF', bg:'#EDF1FF', border:'#DCE3FF', grad:'linear-gradient(135deg,#6E8BFF,#3B5BFF)' },
+    science: { solid:'#10B981', bg:'#E7F8F1', border:'#CFEEE1', grad:'linear-gradient(135deg,#34D399,#0E9F6E)' },
+    english: { solid:'#F59E0B', bg:'#FEF3E2', border:'#FCE6C2', grad:'linear-gradient(135deg,#FBBF24,#F59E0B)' },
+    coding:  { solid:'#8B5CF6', bg:'#F3EEFE', border:'#E6DBFB', grad:'linear-gradient(135deg,#A78BFA,#7C3AED)' },
+    ai:      { solid:'#06B6D4', bg:'#E2F7FB', border:'#C7EFF5', grad:'linear-gradient(135deg,#22D3EE,#0891B2)' },
+    history: { solid:'#F43F5E', bg:'#FEECEF', border:'#FBD5DC', grad:'linear-gradient(135deg,#FB7185,#E11D48)' },
+    indigo:  { solid:'#6366F1', bg:'#EEF0FF', border:'#DDE0FF', grad:'linear-gradient(135deg,#818CF8,#6366F1)' },
+  };
+
+  NAV = [
+    { key:'dashboard', label:'Dashboard', lic:'LayoutDashboard' },
+    { key:'courses', label:'My Courses', lic:'BookOpen' },
+    { key:'live', label:'Live Classes', lic:'Video' },
+    { key:'assignments', label:'Assignments', lic:'ClipboardList', badge:'3' },
+    { key:'assessments', label:'Assessments', lic:'ClipboardCheck' },
+    { key:'attendance', label:'Attendance', lic:'CalendarCheck' },
+    { key:'tutor', label:'AI Tutor', lic:'Sparkles' },
+    { key:'certificates', label:'Certificates', lic:'Award' },
+    { key:'reports', label:'Progress Reports', lic:'TrendingUp' },
+    { key:'messages', label:'Messages', lic:'MessageCircle', badge:'2' },
+    { key:'calendar', label:'Calendar', lic:'CalendarDays' },
+    { key:'settings', label:'Settings', lic:'Settings' },
+  ];
+
+  COURSES = [
+    { key:'math', name:'Mathematics', lesson:'Algebra · Quadratic Equations', progress:72, teacher:'Mr. David Chen', lic:'Calculator', lessons:48, done:35 },
+    { key:'science', name:'Science', lesson:'Biology · Cell Structure', progress:64, teacher:'Dr. Aisha Khan', lic:'FlaskConical', lessons:52, done:33 },
+    { key:'english', name:'English', lesson:'Literature · Poetry Analysis', progress:81, teacher:'Ms. Laura Bennett', lic:'BookMarked', lessons:40, done:32 },
+    { key:'coding', name:'Coding', lesson:'Python · Loops & Functions', progress:58, teacher:'Mr. Omar Reyes', lic:'Code', lessons:36, done:21 },
+    { key:'ai', name:'AI Foundations', lesson:'Intro to Neural Networks', progress:45, teacher:'Dr. Mei Lin', lic:'Brain', lessons:30, done:13 },
+    { key:'history', name:'World History', lesson:'Ancient Civilizations', progress:90, teacher:'Mr. Tom Walsh', lic:'Globe', lessons:28, done:25 },
+  ];
+
+  noop = () => {};
+  setRoot = (el) => { this._root = el; if (el && this._ro) this._ro.observe(el); };
+
+  componentDidMount() {
+    this._ro = new ResizeObserver((entries) => {
+      const w = entries[0].contentRect.width;
+      if (Math.abs(w - this.state.width) > 2) this.setState({ width: w });
+    });
+    if (this._root) this._ro.observe(this._root);
+    this.setState({ chat: [{ role:'ai', text:`Hi ${this.props.studentName || 'Sarah'}! I'm your Aalgorix AI Tutor. Ask me anything — homework help, concept explanations, or practice questions. What are we working on today?` }] });
+    const check = () => { if (window.lucide && window.lucide.icons) { this.setState({ ready: true }); return true; } return false; };
+    if (!check()) { this._poll = setInterval(() => { if (check()) clearInterval(this._poll); }, 60); }
+  }
+  componentWillUnmount() { if (this._ro) this._ro.disconnect(); if (this._poll) clearInterval(this._poll); }
+
+  camel(k){ return k.replace(/-([a-z])/g, (m,c)=>c.toUpperCase()); }
+  icon(name, size, color, sw) {
+    const L = window.lucide;
+    if (!L || !L.icons || !L.icons[name]) return null;
+    size = size || 20; color = color || 'currentColor'; sw = sw || 2;
+    const kids = L.icons[name].map((node, i) => {
+      const attrs = { key: i };
+      const a = node[1] || {};
+      for (const k in a) attrs[this.camel(k)] = a[k];
+      return React.createElement(node[0], attrs);
+    });
+    return React.createElement('svg', { width:size, height:size, viewBox:'0 0 24 24', fill:'none', stroke:color, strokeWidth:sw, strokeLinecap:'round', strokeLinejoin:'round', style:{display:'block',flex:'0 0 auto'} }, kids);
+  }
+
+  bp() { const w = this.state.width; return w < 760 ? 'mobile' : (w < 1120 ? 'tablet' : 'desktop'); }
+  go = (v) => this.setState({ view: v, navOpen: false });
+
+  sendChat = () => {
+    const t = (this.state.chatInput || '').trim();
+    if (!t) return;
+    this.setState(s => ({ chat: s.chat.concat([{ role:'user', text:t }]), chatInput:'', typing:true }));
+    clearTimeout(this._reply);
+    this._reply = setTimeout(() => {
+      this.setState(s => ({ chat: s.chat.concat([{ role:'ai', text: this.aiReply(t) }]), typing:false }));
+    }, 1200);
+  };
+  setChat = (e) => this.setState({ chatInput: e.target.value });
+  chatKey = (e) => { if (e.key === 'Enter') this.sendChat(); };
+  quickAsk = (q) => { this.setState({ chatInput: q }, () => this.sendChat()); };
+  submitAssign = (id) => this.setState(s => ({ submitted: { ...s.submitted, [id]: true } }));
+
+  aiReply(q) {
+    const l = q.toLowerCase();
+    if (l.includes('quadratic') || l.includes('algebra') || l.includes('equation'))
+      return "Great question! A quadratic equation has the form ax² + bx + c = 0. You can solve it by factoring, completing the square, or using the quadratic formula: x = (−b ± √(b²−4ac)) / 2a. Want me to walk through an example step by step?";
+    if (l.includes('cell') || l.includes('biology') || l.includes('science'))
+      return "A cell is the basic unit of life! Key parts: the nucleus (control centre), mitochondria (energy), and the cell membrane (boundary). Plant cells also have a cell wall and chloroplasts. Shall I make you 3 practice questions on this?";
+    if (l.includes('practice') || l.includes('question') || l.includes('quiz'))
+      return "Here are 3 quick practice questions:\n1) Solve x² − 5x + 6 = 0\n2) Factor x² + 7x + 12\n3) Find the vertex of y = x² − 4x + 3\nTake your time — tell me your answers and I'll check them!";
+    if (l.includes('hello') || l.includes('hi') || l.includes('hey'))
+      return "Hey there! Ready to learn something awesome today? You can ask me about any subject, or say 'give me practice questions'.";
+    return "Good question! Let me break that down simply: I'll start with the core idea, then a quick example, then a tip to remember it. Want the short version or a deep dive?";
+  }
+
+  ring(pct, r, C) { return C - (pct / 100) * C; }
+  buildPath(vals, w, h, pad) {
+    const max = Math.max(...vals), min = Math.min(...vals);
+    const range = (max - min) || 1;
+    const step = (w - pad * 2) / (vals.length - 1);
+    const pts = vals.map((v, i) => ({ x: +(pad + i * step).toFixed(1), y: +(h - pad - ((v - min) / range) * (h - pad * 2)).toFixed(1) }));
+    const line = pts.map((p, i) => (i ? 'L' : 'M') + p.x + ' ' + p.y).join(' ');
+    const area = line + ` L ${pts[pts.length-1].x} ${h} L ${pts[0].x} ${h} Z`;
+    return { line, area, pts };
+  }
+
+  renderVals() {
+    const v = this.state.view;
+    const bp = this.bp();
+    const isMobile = bp === 'mobile', isTablet = bp === 'tablet', isDesktop = bp === 'desktop';
+    const name = this.props.studentName || 'Sarah';
+    const gradeLabel = this.props.gradeLabel || 'Grade 7';
+    const yearLabel = this.props.yearLabel || '2025–2026';
+    const streakDays = this.props.streakDays ?? 24;
+    const C = this.COLORS;
+    const mk = (key) => C[key] || C.indigo;
+    const I = (n,s,c,sw) => this.icon(n,s,c,sw);
+
+    const ic = {
+      logo: I('GraduationCap', 21, '#fff'),
+      premiumSparkle: I('Sparkles', 18, '#C4B5FD'),
+      menu: I('Menu', 20),
+      search: I('Search', 18, '#9AA0B8'),
+      sparkleW: I('Sparkles', 17, '#fff'),
+      bell: I('Bell', 19),
+      bellSm: I('Bell', 18, '#9AA0B8'),
+      student: I('GraduationCap', 15, '#fff'),
+      cal: I('Calendar', 15, '#fff'),
+      fire: I('Flame', 15, '#FFD27D'),
+      play: I('Play', 18, '#5B5BF0'),
+      arrow: I('ArrowRight', 14),
+      tutorBig: I('Sparkles', 24, '#fff'),
+      chat: I('MessageCircle', 17, '#241F4D'),
+      mic: I('Mic', 17, '#fff'),
+      check: I('CircleCheck', 16, '#0E9F6E'),
+      trendUp: I('TrendingUp', 12, '#0E9F6E'),
+      x: I('X', 18),
+    };
+
+    const navItems = this.NAV.map(n => ({
+      label: n.label, key: n.key,
+      icon: I(n.lic, 20, v === n.key ? '#5B5BF0' : '#7A7E97'),
+      bg: v === n.key ? '#EEF0FF' : 'transparent',
+      color: v === n.key ? '#5B5BF0' : '#5A5E78',
+      onClick: () => this.go(n.key),
+      showBadge: !!n.badge, badge: n.badge,
+    }));
+
+    const bottomKeys = ['dashboard','courses','tutor','assignments','calendar'];
+    const bottomNav = bottomKeys.map(k => {
+      const n = this.NAV.find(x => x.key === k);
+      const center = k === 'tutor';
+      const col = v === k ? '#5B5BF0' : '#9AA0B8';
+      return { label: n.label.replace('My ',''), onClick: () => this.go(k),
+        iconEl: I(n.lic, 23, col), color: col, isCenter: center, notCenter: !center };
+    });
+
+    const ringC = 2 * Math.PI * 23;
+    const stats = [
+      { isRing:true, value:'68%', solid:C.indigo.solid, C:ringC.toFixed(1), off:this.ring(68,23,ringC).toFixed(1), label:'Overall progress', trend:'+6%' },
+      { isIcon:true, big:'12/16', iconEl:I('BookOpen',23,C.science.solid), bg:C.science.bg, label:'Courses completed', trend:'+2' },
+      { isIcon:true, big:'47', iconEl:I('ClipboardList',23,C.coding.solid), bg:C.coding.bg, label:'Assignments submitted', trend:'+5' },
+      { isRing:true, value:'96%', solid:C.english.solid, C:ringC.toFixed(1), off:this.ring(96,23,ringC).toFixed(1), label:'Attendance rate', trend:'+1%' },
+      { isRing:true, value:'91%', solid:C.history.solid, C:ringC.toFixed(1), off:this.ring(91,23,ringC).toFixed(1), label:'Average score', trend:'+4%' },
+    ];
+
+    const goalDone = 5, goalTotal = 7, goalPct = Math.round(goalDone/goalTotal*100);
+    const goalC = 2 * Math.PI * 44;
+
+    const schedRaw = [
+      { time:'09:00', ampm:'AM', subject:'Mathematics', teacher:'Live with Mr. David Chen', key:'math', state:'live', status:'Live now' },
+      { time:'11:30', ampm:'AM', subject:'AI Foundations', teacher:'Live with Dr. Mei Lin', key:'ai', state:'soon', status:'In 2 hrs' },
+      { time:'02:00', ampm:'PM', subject:'English Literature', teacher:'Live with Ms. Laura Bennett', key:'english', state:'soon', status:'Upcoming' },
+      { time:'08:00', ampm:'AM', subject:'Science Lab', teacher:'Recorded · Dr. Aisha Khan', key:'science', state:'done', status:'Completed' },
+    ];
+    const schedule = schedRaw.map(s => { const c = mk(s.key); const co = this.COURSES.find(x=>x.key===s.key); return {
+      ...s, solid:c.solid, bg:c.bg, border:c.border, grad:c.grad, iconEl:I(co.lic,20,'#fff'),
+      isLive:s.state==='live', isSoon:s.state==='soon', isDone:s.state==='done' };});
+
+    const continueCourses = this.COURSES.slice(0,5).map(co => { const c = mk(co.key); return {
+      name:co.name, lesson:co.lesson, progress:co.progress, progressW:co.progress+'%',
+      grad:c.grad, bg:c.bg, solid:c.solid, iconEl:I(co.lic,24,'#fff'), playEl:I('Play',14,c.solid), onClick:()=>this.go('courses') };});
+
+    const wt = [{day:'Mon',h:2.5},{day:'Tue',h:3.2},{day:'Wed',h:1.8},{day:'Thu',h:3.8},{day:'Fri',h:2.9},{day:'Sat',h:1.2},{day:'Sun',h:2.1}];
+    const wtMax = Math.max(...wt.map(x=>x.h));
+    const fills = ['#C7D0FF','#A9B6FF','#8B9DFF','#6366F1','#8B9DFF','#C7D0FF','#A9B6FF'];
+    const weeklyTime = wt.map((b,i)=>({ day:b.day, h:b.h, heightPct: Math.round(b.h/wtMax*100)+'%', fill: i===3?'#6366F1':fills[i] }));
+
+    const quizVals = [72,78,75,84,80,88,92];
+    const qp = this.buildPath(quizVals, 240, 130, 8);
+
+    const sp = [['Mathematics',88,'math'],['Science',92,'science'],['English',84,'english'],['Coding',95,'coding'],['AI Foundations',90,'ai']];
+    const subjectPerf = sp.map(([nm,score,key])=>({ name:nm, score, scoreW:score+'%', grad:mk(key).grad }));
+
+    const prio = { high:'#FB7185', med:'#F59E0B', low:'#10B981' };
+    const dashAssignments = [
+      { title:'Algebra Problem Set 7', course:'Mathematics', due:'Today', prio:'High', prioColor:prio.high, dueColor:'#E11D48' },
+      { title:'Cell Biology Lab Report', course:'Science', due:'Tomorrow', prio:'Medium', prioColor:prio.med, dueColor:'#B45309' },
+      { title:'Poetry Essay Draft', course:'English', due:'In 3 days', prio:'Low', prioColor:prio.low, dueColor:'#6B6F8A' },
+    ];
+
+    const notifications = [
+      { iconEl:I('Video',18,C.math.solid), bg:C.math.bg, text:'Mathematics live class starts in 30 minutes', time:'8:30 AM' },
+      { iconEl:I('ClipboardList',18,C.coding.solid), bg:C.coding.bg, text:'Algebra Problem Set 7 is due today', time:'1 hour ago' },
+      { iconEl:I('Megaphone',18,C.english.solid), bg:C.english.bg, text:'Ms. Bennett posted new poetry resources', time:'3 hours ago' },
+      { iconEl:I('Sparkles',18,C.ai.solid), bg:C.ai.bg, text:'AI Tutor: 3 new practice sets ready for you', time:'Yesterday' },
+    ];
+
+    const pattern = [2,1,1,1,1,3,3,1,1,1,1,1,3,3,1,1,0,1,1,3,3,1,1,1,1,1,3,3,1,1];
+    const attLabel = ['Absent','Present','Holiday','Late'];
+    const attendanceMini = pattern.map(p=>({ color: p===1?'#10B981':(p===0?'#FB7185':(p===3?'#EEF0F5':'#FBBF24')), label: attLabel[p] }));
+
+    const badges = [
+      { name:'Math Whiz', desc:'Aced 10 quizzes', iconEl:I('Trophy',26,'#fff'), grad:C.english.grad, shadow:'rgba(245,158,11,.35)', cardBg:'#fff', opacity:1 },
+      { name:'30-Day Streak', desc:'Learned daily', iconEl:I('Flame',26,'#fff'), grad:C.history.grad, shadow:'rgba(244,63,94,.3)', cardBg:'#fff', opacity:1 },
+      { name:'Code Master', desc:'Built 5 projects', iconEl:I('Code',26,'#fff'), grad:C.coding.grad, shadow:'rgba(139,92,246,.3)', cardBg:'#fff', opacity:1 },
+      { name:'Science Star', desc:'Top lab reports', iconEl:I('FlaskConical',26,'#fff'), grad:C.science.grad, shadow:'rgba(16,185,129,.3)', cardBg:'#fff', opacity:1 },
+      { name:'Scholar', desc:'2 badges to go', iconEl:I('Medal',26,'#fff'), grad:'linear-gradient(135deg,#C7CBE0,#9AA0B8)', shadow:'rgba(0,0,0,.1)', cardBg:'#FAFAFC', opacity:.6 },
+    ];
+
+    return {
+      setRoot:this.setRoot, noop:this.noop, ic,
+      showSidebar: !isMobile, showBottomNav: isMobile,
+      sidebarWidth: isTablet ? '82px' : '256px',
+      navJustify: isTablet ? 'center' : 'flex-start',
+      showLabels: !isTablet, showSearch: !isMobile, showProfileText: isDesktop,
+      headerPad: isMobile ? '12px 16px' : '14px 28px',
+      contentPad: isMobile ? '16px' : (isTablet ? '22px' : '28px 32px'),
+      contentPadBottom: isMobile ? '96px' : '40px',
+      heroPad: isMobile ? '24px 22px' : '34px 38px',
+      navItems, bottomNav, navOpen: this.state.navOpen,
+      openNav: () => this.setState({navOpen:true}), closeNav: () => this.setState({navOpen:false}),
+      viewTitle: (this.NAV.find(n=>n.key===v)||{}).label || 'Dashboard',
+      initial: name.charAt(0).toUpperCase(),
+      name, gradeLabel, yearLabel, streakDays,
+      goTutor:()=>this.go('tutor'), goSettings:()=>this.go('settings'),
+      goCourses:()=>this.go('courses'), goCalendar:()=>this.go('calendar'),
+      goLive:()=>this.go('live'), goAssign:()=>this.go('assignments'), goCerts:()=>this.go('certificates'),
+
+      isDashboard: v==='dashboard', isCourses: v==='courses', isLive: v==='live',
+      isAssignments: v==='assignments', isAssessments: v==='assessments', isAttendance: v==='attendance',
+      isTutor: v==='tutor', isCertificates: v==='certificates', isReports: v==='reports',
+      isMessages: v==='messages', isCalendar: v==='calendar', isSettings: v==='settings',
+
+      todayLong: 'Monday · June 15, 2026',
+      motivation: "You're on a roll — 3 lessons left to hit this week's goal. Small steps, big results. 🚀",
+      goalC: goalC.toFixed(1), goalOff: this.ring(goalPct,44,goalC).toFixed(1), goalPct, goalDone, goalTotal,
+      stats, scheduleCount: 3, schedule, continueCourses,
+      weeklyTime, quizArea: qp.area, quizLine: qp.line, quizPts: qp.pts, quizLatest: 92,
+      subjectPerf, pendingCount: 3, dashAssignments, notifications, attendanceMini, badges,
+      tutorChips: ['Ask questions','Homework help','Explain concepts','Practice sets'],
+    };
+  }
+}
+</script>
+</body>
+</html>
