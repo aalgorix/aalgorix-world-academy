@@ -43,7 +43,7 @@ const NAV_ITEMS: Omit<NavItem, "icon">[] = [
   { key: "dashboard",    label: "Dashboard",        href: "/student" },
   { key: "courses",      label: "My Courses",        href: "/student/courses" },
   { key: "live",         label: "Live Classes",      href: "/student/live" },
-  { key: "assignments",  label: "Assignments",       href: "/student/notifications", badge: "3" },
+  { key: "assignments",  label: "Assignments",       href: "/student/assignments", badge: "3" },
   { key: "assessments",  label: "Assessments",       href: "/student/assessments" },
   { key: "attendance",   label: "Attendance",        href: "/student/attendance" },
   { key: "tutor",        label: "AI Tutor",          href: "/student/tutor" },

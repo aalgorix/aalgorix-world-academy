@@ -1,0 +1,1264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Aalgorix World Academy — Project Structure</title>
+<style>
+  :root {
+    --bg:        #0d0f14;
+    --bg2:       #13161e;
+    --bg3:       #1a1e29;
+    --border:    #252836;
+    --border2:   #2e3347;
+    --text:      #e2e5f0;
+    --text2:     #9aa0b8;
+    --text3:     #5a617a;
+    --accent:    #5b6af0;
+    --accent2:   #7b8bff;
+    --green:     #34d399;
+    --yellow:    #fbbf24;
+    --red:       #f87171;
+    --purple:    #a78bfa;
+    --cyan:      #22d3ee;
+    --orange:    #fb923c;
+    --pink:      #f472b6;
+
+    --font:      'Inter', system-ui, -apple-system, sans-serif;
+    --mono:      'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* ── Layout ── */
+  header {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 20px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  header h1 {
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+    color: var(--text);
+  }
+
+  header .sub {
+    font-size: 12px;
+    color: var(--text2);
+    margin-top: 2px;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    border: 1px solid var(--border2);
+    color: var(--text2);
+    background: var(--bg3);
+  }
+  .badge.accent { border-color: var(--accent); color: var(--accent2); background: rgba(91,106,240,.1); }
+  .badge.green  { border-color: var(--green);  color: var(--green);   background: rgba(52,211,153,.08); }
+  .badge.yellow { border-color: var(--yellow); color: var(--yellow);  background: rgba(251,191,36,.08); }
+  .badge.red    { border-color: var(--red);    color: var(--red);     background: rgba(248,113,113,.08); }
+
+  nav.tabs {
+    display: flex;
+    gap: 4px;
+    padding: 0 32px;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+  }
+
+  nav.tabs button {
+    padding: 12px 18px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text2);
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color .15s, border-color .15s;
+  }
+  nav.tabs button:hover { color: var(--text); }
+  nav.tabs button.active { color: var(--accent2); border-bottom-color: var(--accent); }
+
+  .tab-content { display: none; padding: 32px; max-width: 1300px; margin: 0 auto; }
+  .tab-content.active { display: block; }
+
+  /* ── Section headings ── */
+  .section-title {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--text3);
+    margin-bottom: 16px;
+  }
+
+  h2 { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+  h3 { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 8px; }
+
+  /* ── Cards ── */
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+  }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+
+  /* ── File tree ── */
+  .tree { font-family: var(--mono); font-size: 12.5px; line-height: 1.8; }
+
+  .tree-item { display: flex; align-items: flex-start; gap: 0; cursor: pointer; }
+  .tree-item .indent { width: 20px; flex-shrink: 0; }
+  .tree-item .connector {
+    width: 20px;
+    flex-shrink: 0;
+    color: var(--border2);
+    user-select: none;
+  }
+  .tree-item .icon { margin-right: 6px; font-size: 11px; flex-shrink: 0; }
+  .tree-item .name { color: var(--text); }
+  .tree-item .name.folder { color: var(--accent2); font-weight: 600; }
+  .tree-item .name.critical { color: var(--yellow); }
+  .tree-item .name.new { color: var(--green); }
+  .tree-item .note {
+    margin-left: 10px;
+    font-size: 11px;
+    color: var(--text3);
+    font-family: var(--font);
+  }
+  .tree-item.collapsed > .tree-children { display: none; }
+  .tree-children { padding-left: 20px; }
+
+  /* ── Layer diagram ── */
+  .layer-stack { display: flex; flex-direction: column; gap: 2px; }
+  .layer {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 20px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    position: relative;
+  }
+  .layer::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    bottom: -3px;
+    width: 1px;
+    height: 3px;
+    background: var(--border2);
+  }
+  .layer:last-child::before { display: none; }
+  .layer-num {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .layer-title { font-weight: 600; font-size: 13px; min-width: 200px; }
+  .layer-desc  { font-size: 12px; color: var(--text2); }
+  .layer-files { font-family: var(--mono); font-size: 11px; color: var(--text3); margin-left: auto; text-align: right; }
+
+  /* ── DB Schema ── */
+  .db-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+  .db-table {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .db-table-header {
+    padding: 10px 14px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .db-table-col {
+    padding: 6px 14px;
+    font-family: var(--mono);
+    font-size: 11px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+  }
+  .db-table-col:last-child { border-bottom: none; }
+  .col-name { color: var(--text); flex: 1; }
+  .col-type { color: var(--text3); font-size: 10.5px; }
+  .col-pk   { color: var(--yellow); font-size: 10px; font-weight: 700; }
+  .col-fk   { color: var(--cyan);   font-size: 10px; }
+
+  /* ── Routes table ── */
+  .route-group { margin-bottom: 28px; }
+  .route-group-title {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--text3);
+    margin-bottom: 10px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12.5px;
+  }
+  thead th {
+    text-align: left;
+    padding: 8px 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--text3);
+    border-bottom: 1px solid var(--border);
+  }
+  tbody tr { border-bottom: 1px solid var(--border); }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: rgba(255,255,255,.025); }
+  tbody td { padding: 9px 12px; vertical-align: middle; }
+
+  code {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    background: var(--bg3);
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: var(--accent2);
+  }
+
+  .dot {
+    width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+    display: inline-block;
+  }
+
+  /* ── Stat strip ── */
+  .stat-strip { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 24px; }
+  .stat-box {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 20px;
+    min-width: 130px;
+  }
+  .stat-box .value {
+    font-size: 26px;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 4px;
+    letter-spacing: -0.5px;
+  }
+  .stat-box .label {
+    font-size: 11.5px;
+    color: var(--text2);
+    font-weight: 500;
+  }
+
+  /* ── Progress bar ── */
+  .progress-wrap { background: var(--bg3); border-radius: 4px; height: 6px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 4px; transition: width .4s; }
+
+  /* ── Env table ── */
+  .env-required { color: var(--red); font-weight: 700; font-size: 11px; }
+  .env-optional { color: var(--text3); font-size: 11px; }
+  .env-prod     { color: var(--yellow); font-weight: 600; font-size: 11px; }
+
+  /* ── Dep graph ── */
+  .dep-group { margin-bottom: 20px; }
+  .dep-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .dep-name  { font-family: var(--mono); font-size: 12px; color: var(--accent2); min-width: 220px; }
+  .dep-ver   { font-size: 11px; color: var(--text3); min-width: 80px; }
+  .dep-desc  { font-size: 12px; color: var(--text2); }
+
+  /* scroll */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+  @media (max-width: 900px) {
+    .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+    .tab-content { padding: 20px 16px; }
+    header { padding: 16px 20px; }
+    nav.tabs { padding: 0 16px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── Header ── -->
+<header>
+  <div>
+    <h1>Aalgorix World Academy</h1>
+    <div class="sub">Project Structure · Architecture · Database · Routes · Dependencies</div>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;">
+    <span class="badge accent">Next.js 16.2</span>
+    <span class="badge green">React 19</span>
+    <span class="badge">TypeScript 5 strict</span>
+    <span class="badge yellow">Beta</span>
+    <span class="badge">62% Complete</span>
+  </div>
+</header>
+
+<!-- ── Tabs ── -->
+<nav class="tabs">
+  <button class="active" onclick="switchTab('tree',this)">File Tree</button>
+  <button onclick="switchTab('arch',this)">Architecture</button>
+  <button onclick="switchTab('db',this)">Database</button>
+  <button onclick="switchTab('routes',this)">Routes</button>
+  <button onclick="switchTab('deps',this)">Dependencies</button>
+  <button onclick="switchTab('env',this)">Env Vars</button>
+</nav>
+
+<!-- ══════════════ FILE TREE ══════════════ -->
+<div class="tab-content active" id="tab-tree">
+  <div class="stat-strip">
+    <div class="stat-box"><div class="value" style="color:var(--accent2)">120+</div><div class="label">Source Files</div></div>
+    <div class="stat-box"><div class="value" style="color:var(--green)">13</div><div class="label">DB Tables</div></div>
+    <div class="stat-box"><div class="value" style="color:var(--yellow)">7</div><div class="label">Route Groups</div></div>
+    <div class="stat-box"><div class="value" style="color:var(--purple)">4</div><div class="label">Actor Roles</div></div>
+    <div class="stat-box"><div class="value" style="color:var(--cyan)">2</div><div class="label">API Routes</div></div>
+    <div class="stat-box"><div class="value" style="color:var(--orange)">12+</div><div class="label">Marketing Pages</div></div>
+  </div>
+
+  <div class="grid-2" style="gap:28px;align-items:start;">
+    <div>
+      <div class="section-title">Project Root</div>
+      <div class="card">
+        <div class="tree" id="tree-root"></div>
+      </div>
+    </div>
+    <div>
+      <div class="section-title">Legend</div>
+      <div class="card" style="margin-bottom:16px;">
+        <table>
+          <tbody>
+            <tr><td><span class="dot" style="background:var(--accent2);"></span></td><td style="padding:6px 10px;"><span style="color:var(--accent2);font-family:var(--mono);font-size:12px;">Blue text</span></td><td style="padding:6px 10px;color:var(--text2);font-size:12px;">Directory / folder</td></tr>
+            <tr><td><span class="dot" style="background:var(--yellow);"></span></td><td style="padding:6px 10px;"><span style="color:var(--yellow);font-family:var(--mono);font-size:12px;">Yellow text</span></td><td style="padding:6px 10px;color:var(--text2);font-size:12px;">Critical file (security / entry)</td></tr>
+            <tr><td><span class="dot" style="background:var(--green);"></span></td><td style="padding:6px 10px;"><span style="color:var(--green);font-family:var(--mono);font-size:12px;">Green text</span></td><td style="padding:6px 10px;color:var(--text2);font-size:12px;">Config / migration file</td></tr>
+            <tr><td><span class="dot" style="background:var(--text);"></span></td><td style="padding:6px 10px;"><span style="color:var(--text);font-family:var(--mono);font-size:12px;">White text</span></td><td style="padding:6px 10px;color:var(--text2);font-size:12px;">Regular source file</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="section-title">Route Group Map</div>
+      <div class="card">
+        <table>
+          <thead><tr><th>Group</th><th>URL Prefix</th><th>Purpose</th></tr></thead>
+          <tbody>
+            <tr><td><code>(marketing)</code></td><td><code>/</code></td><td style="color:var(--text2)">Public acquisition surface</td></tr>
+            <tr><td><code>(auth)</code></td><td><code>/login…</code></td><td style="color:var(--text2)">Identity flows, unauthenticated</td></tr>
+            <tr><td><code>(dashboard)</code></td><td><code>/student…</code></td><td style="color:var(--text2)">All four LMS actor dashboards</td></tr>
+            <tr><td><code>api/</code></td><td><code>/api/…</code></td><td style="color:var(--text2)">REST: brochure + contact email</td></tr>
+            <tr><td><code>auth/callback</code></td><td><code>/auth/callback</code></td><td style="color:var(--text2)">OAuth PKCE code exchange</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ ARCHITECTURE ══════════════ -->
+<div class="tab-content" id="tab-arch">
+
+  <div class="section-title" style="margin-bottom:20px;">Security Layers — Defense in Depth</div>
+  <div class="layer-stack" style="max-width:860px;margin-bottom:36px;">
+    <div class="layer" style="background:rgba(34,211,238,.06);border-color:rgba(34,211,238,.3);">
+      <div class="layer-num" style="background:rgba(34,211,238,.15);color:var(--cyan);">1</div>
+      <div>
+        <div class="layer-title" style="color:var(--cyan);">Vercel Edge Network</div>
+        <div class="layer-desc">DDoS protection · TLS termination · CDN static assets · apex → www redirect</div>
+      </div>
+      <div class="layer-files">vercel.json</div>
+    </div>
+    <div class="layer" style="background:rgba(251,191,36,.05);border-color:rgba(251,191,36,.25);">
+      <div class="layer-num" style="background:rgba(251,191,36,.12);color:var(--yellow);">2</div>
+      <div>
+        <div class="layer-title" style="color:var(--yellow);">src/proxy.ts — Edge Gate</div>
+        <div class="layer-desc">Canonical host redirect · Cross-domain redirect · Session refresh · Route-level RBAC</div>
+      </div>
+      <div class="layer-files">src/proxy.ts<br/>src/lib/supabase/middleware.ts<br/>src/lib/routing/host-routing.ts</div>
+    </div>
+    <div class="layer" style="background:rgba(91,106,240,.05);border-color:rgba(91,106,240,.25);">
+      <div class="layer-num" style="background:rgba(91,106,240,.12);color:var(--accent2);">3</div>
+      <div>
+        <div class="layer-title" style="color:var(--accent2);">(dashboard)/layout.tsx + Server Actions</div>
+        <div class="layer-desc">Server-side getUser() verification · requireAdmin() / requireTeacher() / requireActiveEnrollment() guards</div>
+      </div>
+      <div class="layer-files">(dashboard)/layout.tsx<br/>*/actions.ts files</div>
+    </div>
+    <div class="layer" style="background:rgba(167,139,250,.05);border-color:rgba(167,139,250,.25);">
+      <div class="layer-num" style="background:rgba(167,139,250,.12);color:var(--purple);">4</div>
+      <div>
+        <div class="layer-title" style="color:var(--purple);">PostgreSQL Row-Level Security</div>
+        <div class="layer-desc">auth.uid() bound · security-definer helper functions · 13 tables · authoritative data-plane authorization</div>
+      </div>
+      <div class="layer-files">supabase/migrations/<br/>foundation.sql</div>
+    </div>
+  </div>
+
+  <div class="grid-2" style="gap:24px;align-items:start;margin-bottom:32px;">
+
+    <div>
+      <div class="section-title">Application Layers</div>
+      <div class="card">
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--bg3);border-radius:8px;border:1px solid var(--border);">
+            <div style="width:10px;height:10px;border-radius:50%;background:var(--cyan);flex-shrink:0;"></div>
+            <div style="flex:1;">
+              <div style="font-size:12px;font-weight:700;color:var(--cyan);">Marketing Surface</div>
+              <div style="font-size:11px;color:var(--text2);margin-top:2px;">src/app/(marketing)/ · RSC + minimal client islands · Contentful CMS · ElevenLabs AI</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--bg3);border-radius:8px;border:1px solid var(--border);">
+            <div style="width:10px;height:10px;border-radius:50%;background:var(--accent2);flex-shrink:0;"></div>
+            <div style="flex:1;">
+              <div style="font-size:12px;font-weight:700;color:var(--accent2);">Identity Acquisition</div>
+              <div style="font-size:11px;color:var(--text2);margin-top:2px;">src/app/(auth)/ · Email/password · Google OAuth · Password recovery</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--bg3);border-radius:8px;border:1px solid var(--border);">
+            <div style="width:10px;height:10px;border-radius:50%;background:var(--green);flex-shrink:0;"></div>
+            <div style="flex:1;">
+              <div style="font-size:12px;font-weight:700;color:var(--green);">LMS Core (4 Actors)</div>
+              <div style="font-size:11px;color:var(--text2);margin-top:2px;">src/app/(dashboard)/ · Student · Teacher · Parent · Admin</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--bg3);border-radius:8px;border:1px solid var(--border);">
+            <div style="width:10px;height:10px;border-radius:50%;background:var(--orange);flex-shrink:0;"></div>
+            <div style="flex:1;">
+              <div style="font-size:12px;font-weight:700;color:var(--orange);">API Routes</div>
+              <div style="font-size:11px;color:var(--text2);margin-top:2px;">src/app/api/ · POST /api/brochure · POST /api/contact-inquiry</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--bg3);border-radius:8px;border:1px solid var(--border);">
+            <div style="width:10px;height:10px;border-radius:50%;background:var(--purple);flex-shrink:0;"></div>
+            <div style="flex:1;">
+              <div style="font-size:12px;font-weight:700;color:var(--purple);">Business Logic Libraries</div>
+              <div style="font-size:11px;color:var(--text2);margin-top:2px;">src/lib/ · curriculum · dashboard · student · storage · parent-link · email</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--bg3);border-radius:8px;border:1px solid var(--border);">
+            <div style="width:10px;height:10px;border-radius:50%;background:var(--pink);flex-shrink:0;"></div>
+            <div style="flex:1;">
+              <div style="font-size:12px;font-weight:700;color:var(--pink);">Data Access Adapters</div>
+              <div style="font-size:11px;color:var(--text2);margin-top:2px;">src/lib/supabase/ · Browser · Server · Admin (service-role)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-title">External Services</div>
+      <div class="card" style="margin-bottom:16px;">
+        <table>
+          <thead><tr><th>Service</th><th>Purpose</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Supabase</strong></td><td style="color:var(--text2)">Auth + PostgreSQL + Storage</td><td><span class="badge green">Live</span></td></tr>
+            <tr><td><strong>Vercel</strong></td><td style="color:var(--text2)">Hosting + Edge Network</td><td><span class="badge green">Live</span></td></tr>
+            <tr><td><strong>Contentful</strong></td><td style="color:var(--text2)">Blog CMS (rich text)</td><td><span class="badge green">Live</span></td></tr>
+            <tr><td><strong>ElevenLabs</strong></td><td style="color:var(--text2)">AI Voice Assistant</td><td><span class="badge green">Live</span></td></tr>
+            <tr><td><strong>SMTP</strong></td><td style="color:var(--text2)">Brochure + contact email</td><td><span class="badge green">Live</span></td></tr>
+            <tr><td><strong>Stripe</strong></td><td style="color:var(--text2)">Subscription billing</td><td><span class="badge red">Deferred</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="section-title">Storage Buckets</div>
+      <div class="card">
+        <table>
+          <thead><tr><th>Bucket</th><th>Public</th><th>Max Size</th><th>Content</th></tr></thead>
+          <tbody>
+            <tr><td><code>lesson-videos</code></td><td style="color:var(--red)">Private</td><td>500 MB</td><td style="color:var(--text2)">MP4 via TUS resumable</td></tr>
+            <tr><td><code>assignment-files</code></td><td style="color:var(--red)">Private</td><td>50 MB</td><td style="color:var(--text2)">PDF worksheets via XHR</td></tr>
+            <tr><td><code>submissions</code></td><td style="color:var(--red)">Private</td><td>25 MB</td><td style="color:var(--text2)">Student homework files</td></tr>
+            <tr><td><code>avatars</code></td><td style="color:var(--green)">Public</td><td>—</td><td style="color:var(--text2)">Profile photos</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">Data Flow</div>
+  <div class="card" style="max-width:900px;">
+    <table>
+      <thead><tr><th>From</th><th>To</th><th>Protocol</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td>Browser</td><td>Vercel Edge / proxy.ts</td><td><code>HTTP + Cookie</code></td><td style="color:var(--text2)">Every navigation — session refresh + RBAC</td></tr>
+        <tr><td>Browser</td><td>Supabase Auth</td><td><code>HTTPS</code></td><td style="color:var(--text2)">signIn / signUp / OAuth redirect</td></tr>
+        <tr><td>Server Component</td><td>Supabase PostgreSQL</td><td><code>REST (RLS)</code></td><td style="color:var(--text2)">Data fetching with row-level authorization</td></tr>
+        <tr><td>Server Action</td><td>Supabase PostgreSQL</td><td><code>REST (RLS)</code></td><td style="color:var(--text2)">Mutations — course CRUD, grading, progress</td></tr>
+        <tr><td>Browser</td><td>Supabase Storage (TUS)</td><td><code>HTTP chunked</code></td><td style="color:var(--text2)">Resumable video upload (6 MB chunks)</td></tr>
+        <tr><td>Server Component</td><td>Supabase Storage</td><td><code>REST</code></td><td style="color:var(--text2)">Generate signed URLs (1h TTL)</td></tr>
+        <tr><td>Server</td><td>Contentful CDN</td><td><code>HTTPS SDK</code></td><td style="color:var(--text2)">Blog post fetches (RSC)</td></tr>
+        <tr><td>Browser</td><td>ElevenLabs</td><td><code>WebSocket</code></td><td style="color:var(--text2)">Real-time AI voice conversation</td></tr>
+        <tr><td>API Route</td><td>SMTP Server</td><td><code>SMTP/TLS</code></td><td style="color:var(--text2)">Brochure + contact inquiry emails</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══════════════ DATABASE ══════════════ -->
+<div class="tab-content" id="tab-db">
+
+  <div class="stat-strip">
+    <div class="stat-box"><div class="value" style="color:var(--accent2)">13</div><div class="label">Public Tables</div></div>
+    <div class="stat-box"><div class="value" style="color:var(--green)">13</div><div class="label">RLS Enabled</div></div>
+    <div class="stat-box"><div class="value" style="color:var(--purple)">5</div><div class="label">Custom Enums</div></div>
+    <div class="stat-box"><div class="value" style="color:var(--yellow)">6</div><div class="label">Security-Definer Functions</div></div>
+    <div class="stat-box"><div class="value" style="color:var(--orange)">9</div><div class="label">Auto-update Triggers</div></div>
+    <div class="stat-box"><div class="value" style="color:var(--red)">1</div><div class="label">Missing Migration</div></div>
+  </div>
+
+  <div class="section-title">Custom Enums</div>
+  <div class="card" style="margin-bottom:28px;">
+    <div style="display:flex;flex-wrap:wrap;gap:10px;">
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 16px;">
+        <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px;">user_role</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <span class="badge accent">student</span><span class="badge">parent</span><span class="badge">teacher</span><span class="badge">admin</span>
+        </div>
+      </div>
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 16px;">
+        <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px;">enrollment_status</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <span class="badge">pending</span><span class="badge green">active</span><span class="badge yellow">paused</span><span class="badge red">cancelled</span><span class="badge">completed</span>
+        </div>
+      </div>
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 16px;">
+        <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px;">unlock_strategy</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <span class="badge">all_at_once</span><span class="badge">sequential</span><span class="badge">drip</span><span class="badge">manual</span>
+        </div>
+      </div>
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 16px;">
+        <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px;">submission_status</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <span class="badge">draft</span><span class="badge yellow">submitted</span><span class="badge green">graded</span><span class="badge red">returned</span>
+        </div>
+      </div>
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 16px;">
+        <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px;">subscription_status</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <span class="badge">trialing</span><span class="badge green">active</span><span class="badge yellow">past_due</span><span class="badge red">canceled</span><span class="badge">unpaid</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">Table Schema</div>
+  <div class="db-grid" id="db-tables-grid"></div>
+
+  <div style="margin-top:28px;">
+    <div class="section-title">Security-Definer Helper Functions (RLS)</div>
+    <div class="card">
+      <table>
+        <thead><tr><th>Function</th><th>Returns</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td><code>is_admin()</code></td><td><code>boolean</code></td><td style="color:var(--text2)">True when current user has role = 'admin'</td></tr>
+          <tr><td><code>is_teacher()</code></td><td><code>boolean</code></td><td style="color:var(--text2)">True when role in ('teacher', 'admin')</td></tr>
+          <tr><td><code>current_user_role()</code></td><td><code>user_role</code></td><td style="color:var(--text2)">Returns the role enum for auth.uid()</td></tr>
+          <tr><td><code>parent_has_student(uuid)</code></td><td><code>boolean</code></td><td style="color:var(--text2)">True if current user is a guardian of the given student_id</td></tr>
+          <tr><td><code>student_is_enrolled_in_course(uuid)</code></td><td><code>boolean</code></td><td style="color:var(--text2)">True if current user has active enrollment for course_id</td></tr>
+          <tr><td><code>student_is_enrolled_in_lesson(uuid)</code></td><td><code>boolean</code></td><td style="color:var(--text2)">Walks course_modules → lessons join to check enrollment</td></tr>
+          <tr><td><code>lesson_is_unlocked_for_student(uuid)</code></td><td><code>boolean</code></td><td style="color:var(--text2)">Checks content_unlocks.available_at &lt;= now() OR is_preview = true</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div style="margin-top:20px;" class="card" style="border-color:rgba(248,113,113,.3);">
+    <div style="display:flex;align-items:center;gap:10px;padding:14px;background:rgba(248,113,113,.06);border-radius:8px;border:1px solid rgba(248,113,113,.25);">
+      <span style="color:var(--red);font-size:16px;font-weight:700;">!</span>
+      <div>
+        <strong style="color:var(--red);">Missing Migration: parent_link_codes</strong>
+        <div style="font-size:12px;color:var(--text2);margin-top:2px;">The parent-student link code flow queries this table but it is absent from <code>20250521000000_foundation.sql</code>. Must be added as a new migration before parent linking can work.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ ROUTES ══════════════ -->
+<div class="tab-content" id="tab-routes">
+
+  <div class="route-group">
+    <div class="route-group-title" style="color:var(--cyan);">Marketing — (marketing) route group · Public · No auth required</div>
+    <table>
+      <thead><tr><th>Route</th><th>Type</th><th>Component</th><th>Data Source</th></tr></thead>
+      <tbody>
+        <tr><td><code>/</code></td><td>RSC + Client island</td><td>page.tsx + marketing-nav.tsx</td><td style="color:var(--text2)">fetchPublishedCourses() · Static sections</td></tr>
+        <tr><td><code>/courses</code></td><td>RSC</td><td>courses/page.tsx</td><td style="color:var(--text2)">fetchPublishedCourses()</td></tr>
+        <tr><td><code>/courses/[slug]</code></td><td>RSC</td><td>courses/[slug]/page.tsx</td><td style="color:var(--text2)">fetchPublishedCourseBySlug()</td></tr>
+        <tr><td><code>/blog</code></td><td>RSC</td><td>blog/page.tsx</td><td style="color:var(--text2)">fetchBlogPosts() — Contentful</td></tr>
+        <tr><td><code>/blog/[slug]</code></td><td>RSC</td><td>blog/[slug]/page.tsx</td><td style="color:var(--text2)">fetchBlogPostBySlug() — Contentful</td></tr>
+        <tr><td><code>/ai-voice-assistant</code></td><td>RSC + Client</td><td>voice-assistant.tsx</td><td style="color:var(--text2)">ElevenLabs WebSocket</td></tr>
+        <tr><td><code>/contact</code></td><td>RSC + Client form</td><td>contact/page.tsx</td><td style="color:var(--text2)">POST /api/contact-inquiry</td></tr>
+        <tr><td><code>/faq</code></td><td>RSC</td><td>faq/page.tsx</td><td style="color:var(--text2)">faq-content.ts (static)</td></tr>
+        <tr><td><code>/academics, /ai-tutor, /our-story, /why-us, /donate, /extracurricular, /parent-portal</code></td><td>RSC</td><td>*/page.tsx</td><td style="color:var(--text2)">Static content</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="route-group">
+    <div class="route-group-title" style="color:var(--accent2);">Auth — (auth) route group · Unauthenticated flows</div>
+    <table>
+      <thead><tr><th>Route</th><th>Type</th><th>Component</th><th>Action</th></tr></thead>
+      <tbody>
+        <tr><td><code>/login</code></td><td>RSC + Client</td><td>login/login-form.tsx</td><td style="color:var(--text2)">signInWithPassword() · signInWithOAuth('google')</td></tr>
+        <tr><td><code>/signup</code></td><td>Client</td><td>signup/page.tsx</td><td style="color:var(--text2)">signUp() with role + full_name in metadata</td></tr>
+        <tr><td><code>/forgot-password</code></td><td>Client</td><td>forgot-password/page.tsx</td><td style="color:var(--text2)">resetPasswordForEmail()</td></tr>
+        <tr><td><code>/reset-password</code></td><td>Client</td><td>reset-password/page.tsx</td><td style="color:var(--text2)">updateUser({ password }) after recovery session</td></tr>
+        <tr><td><code>/auth/callback</code></td><td>Route Handler (GET)</td><td>auth/callback/route.ts</td><td style="color:var(--text2)">exchangeCodeForSession() → role dashboard redirect</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="route-group">
+    <div class="route-group-title" style="color:var(--green);">Student Dashboard — (dashboard) · Requires auth + student role</div>
+    <table>
+      <thead><tr><th>Route</th><th>Type</th><th>Key Data</th></tr></thead>
+      <tbody>
+        <tr><td><code>/student</code></td><td>RSC</td><td style="color:var(--text2)">6 parallel queries: profile, enrollments, submissions, feedback, returned count, pending</td></tr>
+        <tr><td><code>/student/courses</code></td><td>RSC</td><td style="color:var(--text2)">Active enrollments + lesson totals + progress per course</td></tr>
+        <tr><td><code>/student/courses/[courseId]/lessons/[lessonId]</code></td><td>RSC + Client</td><td style="color:var(--text2)">fetchStudentWorkspace() — full lesson context + signed URLs</td></tr>
+        <tr><td><code>/student/profile</code></td><td>Client</td><td style="color:var(--text2)">Profile update server action</td></tr>
+        <tr><td><code>/student/settings</code></td><td>Client</td><td style="color:var(--text2)">Parent link code generation (HMAC, 24h expiry)</td></tr>
+        <tr><td><code>/student/notifications</code></td><td>RSC</td><td style="color:var(--text2)">Pending submissions list</td></tr>
+        <tr><td><code>/student/live</code></td><td>RSC</td><td style="color:var(--text2)">Stub page</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="route-group">
+    <div class="route-group-title" style="color:var(--yellow);">Teacher Dashboard — (dashboard) · Requires auth + teacher role</div>
+    <table>
+      <thead><tr><th>Route</th><th>Type</th><th>Key Data</th></tr></thead>
+      <tbody>
+        <tr><td><code>/teacher</code></td><td>RSC</td><td style="color:var(--text2)">Teacher home — assigned courses overview</td></tr>
+        <tr><td><code>/teacher/grading</code></td><td>RSC + Client</td><td style="color:var(--text2)">Submitted work queue scoped to teacher_course_assignments</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="route-group">
+    <div class="route-group-title" style="color:var(--purple);">Parent Dashboard — (dashboard) · Requires auth + parent role</div>
+    <table>
+      <thead><tr><th>Route</th><th>Type</th><th>Key Data</th></tr></thead>
+      <tbody>
+        <tr><td><code>/parent</code></td><td>RSC</td><td style="color:var(--text2)">Linked children, course progress panels, grading timeline</td></tr>
+        <tr><td><code>/parent/report-card/[childId]</code></td><td>RSC + Client</td><td style="color:var(--text2)">Full grade report — printable transcript</td></tr>
+        <tr><td><code>/parent/settings</code></td><td>Client</td><td style="color:var(--text2)">Link code redemption — connectChildWithLinkCode()</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="route-group">
+    <div class="route-group-title" style="color:var(--red);">Admin Dashboard — (dashboard) · Requires auth + admin role</div>
+    <table>
+      <thead><tr><th>Route</th><th>Type</th><th>Key Data</th></tr></thead>
+      <tbody>
+        <tr><td><code>/admin</code></td><td>RSC</td><td style="color:var(--text2)">Admin overview</td></tr>
+        <tr><td><code>/admin/courses</code></td><td>RSC + Client</td><td style="color:var(--text2)">Full course tree: create/edit/delete/publish · TUS video + PDF worksheet upload</td></tr>
+        <tr><td><code>/admin/staffing</code></td><td>RSC + Client</td><td style="color:var(--text2)">Teacher list · assign/remove from courses</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="route-group">
+    <div class="route-group-title" style="color:var(--orange);">API Routes · REST Handlers</div>
+    <table>
+      <thead><tr><th>Route</th><th>Method</th><th>Auth</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td><code>/api/brochure</code></td><td><span class="badge">POST</span></td><td style="color:var(--text2)">None</td><td style="color:var(--text2)">Send PDF brochure link via SMTP email</td></tr>
+        <tr><td><code>/api/contact-inquiry</code></td><td><span class="badge">POST</span></td><td style="color:var(--text2)">None</td><td style="color:var(--text2)">Forward contact form to awa@aalgorix.com</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══════════════ DEPENDENCIES ══════════════ -->
+<div class="tab-content" id="tab-deps">
+  <div class="grid-2" style="gap:28px;align-items:start;">
+    <div>
+      <div class="section-title">Runtime Dependencies</div>
+      <div class="card">
+        <div id="deps-runtime"></div>
+      </div>
+    </div>
+    <div>
+      <div class="section-title">Dev Dependencies</div>
+      <div class="card" style="margin-bottom:20px;">
+        <div id="deps-dev"></div>
+      </div>
+
+      <div class="section-title">Tech Stack at a Glance</div>
+      <div class="card">
+        <table>
+          <thead><tr><th>Layer</th><th>Technology</th><th>Version</th></tr></thead>
+          <tbody>
+            <tr><td>Framework</td><td><strong>Next.js App Router</strong></td><td style="color:var(--text2)">16.2.6</td></tr>
+            <tr><td>UI Runtime</td><td><strong>React</strong></td><td style="color:var(--text2)">19.2.4</td></tr>
+            <tr><td>Language</td><td><strong>TypeScript</strong></td><td style="color:var(--text2)">5.x strict</td></tr>
+            <tr><td>Styling</td><td><strong>Tailwind CSS</strong></td><td style="color:var(--text2)">v4 (@import "tailwindcss")</td></tr>
+            <tr><td>Optimizer</td><td><strong>React Compiler</strong></td><td style="color:var(--text2)">via babel-plugin-react-compiler</td></tr>
+            <tr><td>Database</td><td><strong>PostgreSQL (Supabase)</strong></td><td style="color:var(--text2)">Latest</td></tr>
+            <tr><td>Auth</td><td><strong>Supabase Auth</strong></td><td style="color:var(--text2)">@supabase/ssr 0.10</td></tr>
+            <tr><td>Storage</td><td><strong>Supabase Storage</strong></td><td style="color:var(--text2)">TUS protocol</td></tr>
+            <tr><td>AI Voice</td><td><strong>ElevenLabs</strong></td><td style="color:var(--text2)">@11labs/react 0.2</td></tr>
+            <tr><td>CMS</td><td><strong>Contentful</strong></td><td style="color:var(--text2)">contentful 11.12</td></tr>
+            <tr><td>Animation</td><td><strong>Framer Motion</strong></td><td style="color:var(--text2)">12.40</td></tr>
+            <tr><td>Email</td><td><strong>Nodemailer</strong></td><td style="color:var(--text2)">8.0.9</td></tr>
+            <tr><td>Icons</td><td><strong>Lucide React</strong></td><td style="color:var(--text2)">1.18</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ ENV VARS ══════════════ -->
+<div class="tab-content" id="tab-env">
+  <div class="stat-strip">
+    <div class="stat-box"><div class="value" style="color:var(--red)">8</div><div class="label">Required</div></div>
+    <div class="stat-box"><div class="value" style="color:var(--yellow)">3</div><div class="label">Required in Production</div></div>
+    <div class="stat-box"><div class="value" style="color:var(--text2)">4</div><div class="label">Optional (graceful degradation)</div></div>
+  </div>
+
+  <div class="card" style="border-color:rgba(248,113,113,.3);margin-bottom:20px;padding:14px 20px;">
+    <strong style="color:var(--red);">Security rule:</strong>
+    <span style="color:var(--text2);"> Never prefix <code>SUPABASE_SERVICE_ROLE_KEY</code> with <code>NEXT_PUBLIC_</code>. It bypasses all RLS policies and must remain server-only.</span>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Variable</th>
+        <th>Required</th>
+        <th>Scope</th>
+        <th>Powers</th>
+        <th>Example</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>NEXT_PUBLIC_SUPABASE_URL</code></td>
+        <td><span class="env-required">Required</span></td>
+        <td style="color:var(--text2)">Public</td>
+        <td style="color:var(--text2)">All Supabase operations</td>
+        <td><code>https://xxx.supabase.co</code></td>
+      </tr>
+      <tr>
+        <td><code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code></td>
+        <td><span class="env-required">Required</span></td>
+        <td style="color:var(--text2)">Public</td>
+        <td style="color:var(--text2)">All anonymous + authenticated queries</td>
+        <td><code>eyJ…</code></td>
+      </tr>
+      <tr>
+        <td><code>SUPABASE_SERVICE_ROLE_KEY</code></td>
+        <td><span class="env-required">Required</span></td>
+        <td style="color:var(--red)">Server-only</td>
+        <td style="color:var(--text2)">Parent link code redemption (bypasses RLS)</td>
+        <td><code>eyJ…service…</code></td>
+      </tr>
+      <tr>
+        <td><code>PARENT_LINK_CODE_SECRET</code></td>
+        <td><span class="env-required">Required</span></td>
+        <td style="color:var(--red)">Server-only</td>
+        <td style="color:var(--text2)">HMAC-SHA256 link code signing (min 16 chars)</td>
+        <td><code>my-secret-string-xyz</code></td>
+      </tr>
+      <tr>
+        <td><code>SMTP_HOST</code></td>
+        <td><span class="env-required">Required</span></td>
+        <td style="color:var(--red)">Server-only</td>
+        <td style="color:var(--text2)">Email delivery (brochure + contact form)</td>
+        <td><code>smtp.resend.com</code></td>
+      </tr>
+      <tr>
+        <td><code>SMTP_PORT</code></td>
+        <td><span class="env-required">Required</span></td>
+        <td style="color:var(--red)">Server-only</td>
+        <td style="color:var(--text2)">465 = TLS, 587 = STARTTLS</td>
+        <td><code>465</code></td>
+      </tr>
+      <tr>
+        <td><code>SMTP_USER</code></td>
+        <td><span class="env-required">Required</span></td>
+        <td style="color:var(--red)">Server-only</td>
+        <td style="color:var(--text2)">SMTP auth username (also used as From address)</td>
+        <td><code>hello@aalgorix.com</code></td>
+      </tr>
+      <tr>
+        <td><code>SMTP_PASS</code></td>
+        <td><span class="env-required">Required</span></td>
+        <td style="color:var(--red)">Server-only</td>
+        <td style="color:var(--text2)">SMTP auth password</td>
+        <td><code>re_xxxx</code></td>
+      </tr>
+      <tr>
+        <td><code>MARKETING_SITE_URL</code></td>
+        <td><span class="env-prod">Prod only</span></td>
+        <td style="color:var(--text2)">Server</td>
+        <td style="color:var(--text2)">Canonical marketing origin for dual-domain</td>
+        <td><code>https://www.aalgorixworldacademy.com</code></td>
+      </tr>
+      <tr>
+        <td><code>APP_SITE_URL</code></td>
+        <td><span class="env-prod">Prod only</span></td>
+        <td style="color:var(--text2)">Server</td>
+        <td style="color:var(--text2)">Canonical LMS origin for dual-domain</td>
+        <td><code>https://app.aalgorixworldacademy.com</code></td>
+      </tr>
+      <tr>
+        <td><code>AUTH_COOKIE_DOMAIN</code></td>
+        <td><span class="env-prod">Prod only</span></td>
+        <td style="color:var(--text2)">Server</td>
+        <td style="color:var(--text2)">Shared parent domain for Supabase auth cookies</td>
+        <td><code>.aalgorixworldacademy.com</code></td>
+      </tr>
+      <tr>
+        <td><code>CONTACT_INQUIRY_TO</code></td>
+        <td><span class="env-optional">Optional</span></td>
+        <td style="color:var(--text2)">Server</td>
+        <td style="color:var(--text2)">Contact form recipient. Default: awa@aalgorix.com</td>
+        <td><code>team@aalgorix.com</code></td>
+      </tr>
+      <tr>
+        <td><code>CONTENTFUL_SPACE_ID</code></td>
+        <td><span class="env-optional">Optional</span></td>
+        <td style="color:var(--text2)">Server</td>
+        <td style="color:var(--text2)">Blog CMS. Graceful degradation when missing.</td>
+        <td><code>abc123xyz</code></td>
+      </tr>
+      <tr>
+        <td><code>CONTENTFUL_ACCESS_TOKEN</code></td>
+        <td><span class="env-optional">Optional</span></td>
+        <td style="color:var(--text2)">Server</td>
+        <td style="color:var(--text2)">Contentful Delivery API token</td>
+        <td><code>token…</code></td>
+      </tr>
+      <tr>
+        <td><code>CONTENTFUL_ENVIRONMENT</code></td>
+        <td><span class="env-optional">Optional</span></td>
+        <td style="color:var(--text2)">Server</td>
+        <td style="color:var(--text2)">Contentful environment. Default: master</td>
+        <td><code>master</code></td>
+      </tr>
+      <tr>
+        <td><code>NEXT_PUBLIC_ELEVENLABS_AGENT_ID</code></td>
+        <td><span class="env-optional">Optional</span></td>
+        <td style="color:var(--text2)">Public</td>
+        <td style="color:var(--text2)">AI Voice Assistant. Shows config error when missing.</td>
+        <td><code>agent_xxx</code></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<script>
+// ── Tab switching ──
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('nav.tabs button').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ── File tree data ──
+const TREE = {
+  name: 'aalgorix-world-academy/',
+  type: 'folder',
+  open: true,
+  children: [
+    { name: 'docs/', type: 'folder', note: 'Project documentation', children: [
+      { name: 'ARCHITECTURE.md', type: 'file', note: 'Target architecture & phase plan' },
+      { name: 'PROJECT_STATUS.md', type: 'file', note: 'Engineering source of truth' },
+      { name: 'MASTER_DOCUMENTATION.md', type: 'file', note: 'CTO audit & full analysis', cls: 'new' },
+      { name: 'project-structure.html', type: 'file', note: 'This file', cls: 'new' },
+    ]},
+    { name: 'supabase/', type: 'folder', note: 'Database migrations', children: [
+      { name: 'migrations/', type: 'folder', children: [
+        { name: '20250521000000_foundation.sql', type: 'file', cls: 'new', note: '13 tables + RLS + triggers' },
+      ]},
+    ]},
+    { name: 'src/', type: 'folder', open: true, children: [
+      { name: 'proxy.ts', type: 'file', cls: 'critical', note: 'Edge proxy entry — security perimeter' },
+      { name: 'app/', type: 'folder', open: true, children: [
+        { name: 'layout.tsx', type: 'file', note: 'Root HTML shell, Geist fonts' },
+        { name: 'globals.css', type: 'file', note: 'Tailwind v4 @theme tokens' },
+        { name: '(marketing)/', type: 'folder', note: 'Public gateway — serves /', children: [
+          { name: 'layout.tsx', type: 'file' },
+          { name: 'page.tsx', type: 'file', note: 'Full landing page (RSC)' },
+          { name: 'marketing-nav.tsx', type: 'file', note: 'Sticky nav + mobile drawer (Client)' },
+          { name: 'marketing-footer.tsx', type: 'file' },
+          { name: 'ai-voice-assistant/', type: 'folder', children: [{ name: 'voice-assistant.tsx', type: 'file', note: 'ElevenLabs WebSocket client' }] },
+          { name: 'blog/', type: 'folder', children: [{ name: 'page.tsx, [slug]/page.tsx', type: 'file', note: 'Contentful-driven blog' }] },
+          { name: 'courses/', type: 'folder', children: [{ name: 'page.tsx, [slug]/page.tsx', type: 'file', note: 'DB-driven public catalog' }] },
+          { name: 'contact/, faq/, academics/ …', type: 'file', note: '8 more static marketing pages' },
+        ]},
+        { name: '(auth)/', type: 'folder', note: 'Identity flows', children: [
+          { name: 'login/, signup/, forgot-password/, reset-password/', type: 'file', note: 'All auth surfaces' },
+        ]},
+        { name: '(dashboard)/', type: 'folder', note: 'Authenticated LMS', children: [
+          { name: 'layout.tsx', type: 'file', cls: 'critical', note: 'Server-side getUser() gate' },
+          { name: 'student/', type: 'folder', note: 'Student LMS workspace', children: [
+            { name: 'layout.tsx', type: 'file', note: 'StudentShell sidebar (Client)' },
+            { name: 'page.tsx', type: 'file', note: 'Dashboard — 6 parallel DB queries' },
+            { name: 'courses/page.tsx', type: 'file', note: 'Enrolled course cards' },
+            { name: 'courses/[courseId]/lessons/[lessonId]/', type: 'folder', children: [
+              { name: 'page.tsx', type: 'file' },
+              { name: 'lesson-workspace.tsx', type: 'file', note: 'Video + submission UI' },
+              { name: 'curriculum-sidebar.tsx', type: 'file' },
+              { name: 'actions.ts', type: 'file', cls: 'critical', note: 'toggleLessonProgress, submitHomework' },
+            ]},
+            { name: 'profile/, settings/', type: 'file', note: 'Profile edit + parent link code gen' },
+          ]},
+          { name: 'teacher/', type: 'folder', note: 'Teacher grading portal', children: [
+            { name: 'page.tsx', type: 'file' },
+            { name: 'grading/grading-station.tsx', type: 'file', note: 'Grade/return workflow' },
+            { name: 'grading/actions.ts', type: 'file', cls: 'critical', note: 'submitTeacherEvaluation' },
+          ]},
+          { name: 'parent/', type: 'folder', note: 'Parent monitoring dashboard', children: [
+            { name: 'page.tsx', type: 'file', note: 'Child progress overview' },
+            { name: 'report-card/[childId]/', type: 'file', note: 'Printable report card' },
+            { name: 'settings/actions.ts', type: 'file', cls: 'critical', note: 'connectChildWithLinkCode' },
+          ]},
+          { name: 'admin/', type: 'folder', note: 'Back-office management', children: [
+            { name: 'courses/actions.ts', type: 'file', cls: 'critical', note: 'Full course CRUD + video upload' },
+            { name: 'courses/upload-lesson-video.tsx', type: 'file', note: 'TUS resumable upload client' },
+            { name: 'staffing/actions.ts', type: 'file', note: 'Teacher course assignment' },
+          ]},
+        ]},
+        { name: 'api/', type: 'folder', note: 'REST handlers', children: [
+          { name: 'brochure/route.ts', type: 'file', note: 'POST — SMTP brochure email' },
+          { name: 'contact-inquiry/route.ts', type: 'file', note: 'POST — SMTP inquiry email' },
+        ]},
+        { name: 'auth/callback/route.ts', type: 'file', cls: 'critical', note: 'PKCE/OAuth code exchange' },
+      ]},
+      { name: 'components/', type: 'folder', children: [
+        { name: 'auth/', type: 'file', note: 'auth-shell, sign-out, google-icon' },
+        { name: 'student/', type: 'file', note: 'student-shell (sidebar), hero, stats, schedule widgets' },
+        { name: 'dashboard/', type: 'file', note: 'Shared dashboard-shell, action-card, stat-card' },
+        { name: 'brand/', type: 'file', note: 'AWA logo SVG component' },
+        { name: 'blog/', type: 'file', note: 'blog-card, rich-text (Contentful renderer)' },
+      ]},
+      { name: 'lib/', type: 'folder', open: true, children: [
+        { name: 'env.ts', type: 'file', note: 'Supabase credential validators' },
+        { name: 'domains.ts', type: 'file', cls: 'critical', note: 'Dual-domain routing + cookie domain' },
+        { name: 'auth/', type: 'folder', children: [
+          { name: 'roles.ts', type: 'file', note: 'UserRole enum + type guards' },
+          { name: 'redirects.ts', type: 'file', note: 'RBAC path algebra + safeRedirectPath' },
+        ]},
+        { name: 'supabase/', type: 'folder', children: [
+          { name: 'client.ts', type: 'file', note: 'Browser client factory' },
+          { name: 'server.ts', type: 'file', note: 'Server RSC client factory' },
+          { name: 'admin.ts', type: 'file', cls: 'critical', note: 'Service-role client (server-only)' },
+          { name: 'middleware.ts', type: 'file', cls: 'critical', note: 'updateSession() — full RBAC logic' },
+        ]},
+        { name: 'student/workspace.ts', type: 'file', cls: 'critical', note: 'fetchStudentWorkspace() — master loader' },
+        { name: 'curriculum/public-catalog.ts', type: 'file', note: 'Published course queries' },
+        { name: 'dashboard/', type: 'file', note: 'course-progress, relations, submission-status' },
+        { name: 'parent-link/codes.ts', type: 'file', cls: 'critical', note: 'HMAC-SHA256 link code system' },
+        { name: 'storage/', type: 'file', note: 'TUS upload + path builders' },
+        { name: 'contentful/', type: 'file', note: 'Blog CMS client + types + mappers' },
+        { name: 'email/smtp.ts', type: 'file', note: 'Nodemailer transporter factory' },
+        { name: 'routing/host-routing.ts', type: 'file', note: 'Canonical + cross-domain redirect resolvers' },
+      ]},
+    ]},
+    { name: 'next.config.ts', type: 'file', cls: 'new', note: 'reactCompiler: true, image domains' },
+    { name: 'package.json', type: 'file', note: 'Dependencies' },
+    { name: 'tsconfig.json', type: 'file', note: 'TypeScript strict mode' },
+    { name: 'vercel.json', type: 'file', note: 'Apex → www permanent redirect' },
+    { name: '.env.local.example', type: 'file', note: 'Environment variable template' },
+    { name: 'AGENTS.md / CLAUDE.md', type: 'file', note: 'AI agent conventions (Next.js 16)' },
+  ]
+};
+
+function buildTree(node, depth) {
+  const div = document.createElement('div');
+  if (node.type === 'folder') {
+    const row = document.createElement('div');
+    row.className = 'tree-item';
+    row.style.cursor = 'pointer';
+    const icon = document.createElement('span');
+    icon.className = 'icon';
+    const nameSpan = document.createElement('span');
+    nameSpan.className = 'name folder';
+    nameSpan.textContent = node.name;
+    const toggle = document.createElement('span');
+    toggle.style.marginLeft = '6px';
+    toggle.style.color = 'var(--text3)';
+    toggle.style.fontSize = '10px';
+    const childrenDiv = document.createElement('div');
+    childrenDiv.className = 'tree-children';
+    if (node.note) {
+      const note = document.createElement('span');
+      note.className = 'note';
+      note.textContent = '— ' + node.note;
+      row.appendChild(icon); row.appendChild(nameSpan); row.appendChild(note);
+    } else {
+      row.appendChild(icon); row.appendChild(nameSpan);
+    }
+    let isOpen = node.open !== false && depth < 2;
+    toggle.textContent = isOpen ? '▾' : '▸';
+    row.prepend(toggle);
+    childrenDiv.style.display = isOpen ? 'block' : 'none';
+    row.onclick = (e) => {
+      e.stopPropagation();
+      isOpen = !isOpen;
+      childrenDiv.style.display = isOpen ? 'block' : 'none';
+      toggle.textContent = isOpen ? '▾' : '▸';
+    };
+    if (node.children) {
+      node.children.forEach(child => childrenDiv.appendChild(buildTree(child, depth + 1)));
+    }
+    div.appendChild(row);
+    div.appendChild(childrenDiv);
+  } else {
+    const row = document.createElement('div');
+    row.className = 'tree-item';
+    const icon = document.createElement('span');
+    icon.className = 'icon';
+    icon.textContent = '›';
+    icon.style.color = 'var(--text3)';
+    const nameSpan = document.createElement('span');
+    nameSpan.className = 'name' + (node.cls ? ' ' + node.cls : '');
+    nameSpan.textContent = node.name;
+    row.appendChild(icon);
+    row.appendChild(nameSpan);
+    if (node.note) {
+      const note = document.createElement('span');
+      note.className = 'note';
+      note.textContent = '— ' + node.note;
+      row.appendChild(note);
+    }
+    div.appendChild(row);
+  }
+  return div;
+}
+
+const treeRoot = document.getElementById('tree-root');
+TREE.children.forEach(child => treeRoot.appendChild(buildTree(child, 0)));
+
+// ── DB Tables ──
+const DB_TABLES = [
+  { name: 'profiles', color: 'var(--accent2)', desc: '1:1 with auth.users', rls: true, cols: [
+    { name: 'id', type: 'uuid PK → auth.users', pk: true },
+    { name: 'role', type: 'user_role' },
+    { name: 'email', type: 'text NOT NULL' },
+    { name: 'full_name', type: 'text' },
+    { name: 'avatar_url', type: 'text' },
+    { name: 'stripe_customer_id', type: 'text UNIQUE' },
+    { name: 'phone, date_of_birth', type: 'text, date' },
+    { name: 'metadata', type: 'jsonb' },
+  ]},
+  { name: 'student_parent_relations', color: 'var(--purple)', desc: 'Guardian graph', rls: true, cols: [
+    { name: 'id', type: 'uuid PK', pk: true },
+    { name: 'parent_id', type: 'uuid FK → profiles', fk: true },
+    { name: 'student_id', type: 'uuid FK → profiles', fk: true },
+    { name: 'relationship_label', type: 'text' },
+    { name: 'is_primary_billing_contact', type: 'boolean' },
+  ]},
+  { name: 'subscription_tiers', color: 'var(--yellow)', desc: 'Stripe plan catalog (data only)', rls: true, cols: [
+    { name: 'id', type: 'uuid PK', pk: true },
+    { name: 'slug, name', type: 'text' },
+    { name: 'stripe_product_id, stripe_price_id', type: 'text' },
+    { name: 'max_courses', type: 'int (null = unlimited)' },
+    { name: 'features', type: 'jsonb' },
+  ]},
+  { name: 'subscriptions', color: 'var(--yellow)', desc: 'Parent billing records', rls: true, cols: [
+    { name: 'id', type: 'uuid PK', pk: true },
+    { name: 'parent_id', type: 'uuid FK → profiles', fk: true },
+    { name: 'tier_id', type: 'uuid FK → subscription_tiers', fk: true },
+    { name: 'stripe_subscription_id', type: 'text UNIQUE' },
+    { name: 'status', type: 'subscription_status' },
+    { name: 'current_period_start/end', type: 'timestamptz' },
+  ]},
+  { name: 'courses', color: 'var(--cyan)', desc: 'Top-level curriculum unit', rls: true, cols: [
+    { name: 'id', type: 'uuid PK', pk: true },
+    { name: 'slug', type: 'text UNIQUE' },
+    { name: 'title, description, grade_level, curriculum_tag', type: 'text' },
+    { name: 'is_published', type: 'boolean' },
+    { name: 'unlock_strategy', type: 'unlock_strategy enum' },
+    { name: 'drip_interval_days', type: 'int' },
+    { name: 'sort_order, created_by', type: 'int, uuid FK' },
+  ]},
+  { name: 'course_modules', color: 'var(--cyan)', desc: 'Ordered units in a course', rls: true, cols: [
+    { name: 'id', type: 'uuid PK', pk: true },
+    { name: 'course_id', type: 'uuid FK → courses', fk: true },
+    { name: 'title, description', type: 'text' },
+    { name: 'sort_order', type: 'int — UNIQUE (course_id, sort_order)' },
+  ]},
+  { name: 'lessons', color: 'var(--cyan)', desc: 'Video/resource metadata', rls: true, cols: [
+    { name: 'id', type: 'uuid PK', pk: true },
+    { name: 'module_id', type: 'uuid FK → course_modules', fk: true },
+    { name: 'title, description', type: 'text' },
+    { name: 'video_storage_path', type: 'text (Supabase Storage path)' },
+    { name: 'resource_paths', type: 'jsonb (PDF paths array)' },
+    { name: 'is_preview', type: 'boolean (free without enroll)' },
+    { name: 'sort_order', type: 'int — UNIQUE (module_id, sort_order)' },
+  ]},
+  { name: 'enrollments', color: 'var(--green)', desc: 'Student ↔ course access', rls: true, cols: [
+    { name: 'id', type: 'uuid PK', pk: true },
+    { name: 'student_id', type: 'uuid FK → profiles', fk: true },
+    { name: 'course_id', type: 'uuid FK → courses', fk: true },
+    { name: 'subscription_id', type: 'uuid FK → subscriptions' },
+    { name: 'status', type: 'enrollment_status enum' },
+    { name: 'enrolled_at, expires_at', type: 'timestamptz' },
+  ]},
+  { name: 'content_unlocks', color: 'var(--green)', desc: 'Per-enrollment lesson availability', rls: true, cols: [
+    { name: 'id', type: 'uuid PK', pk: true },
+    { name: 'enrollment_id', type: 'uuid FK → enrollments', fk: true },
+    { name: 'lesson_id', type: 'uuid FK → lessons', fk: true },
+    { name: 'available_at', type: 'timestamptz (drip gate)' },
+    { name: 'unlocked_by, unlock_reason', type: 'uuid FK, text' },
+  ]},
+  { name: 'lesson_progress', color: 'var(--green)', desc: 'Watch state → sequential unlock', rls: true, cols: [
+    { name: 'id', type: 'uuid PK', pk: true },
+    { name: 'enrollment_id', type: 'uuid FK → enrollments', fk: true },
+    { name: 'lesson_id', type: 'uuid FK → lessons', fk: true },
+    { name: 'completed', type: 'boolean' },
+    { name: 'progress_percent', type: 'smallint 0–100' },
+    { name: 'last_position_seconds', type: 'int' },
+  ]},
+  { name: 'assignments', color: 'var(--orange)', desc: 'Homework metadata', rls: true, cols: [
+    { name: 'id', type: 'uuid PK', pk: true },
+    { name: 'course_id', type: 'uuid FK → courses', fk: true },
+    { name: 'lesson_id', type: 'uuid FK → lessons', fk: true },
+    { name: 'title, description', type: 'text' },
+    { name: 'max_points', type: 'smallint default 100' },
+    { name: 'due_at', type: 'timestamptz' },
+    { name: 'is_published', type: 'boolean' },
+  ]},
+  { name: 'submissions', color: 'var(--orange)', desc: 'Student uploads + grades', rls: true, cols: [
+    { name: 'id', type: 'uuid PK', pk: true },
+    { name: 'assignment_id', type: 'uuid FK → assignments', fk: true },
+    { name: 'student_id', type: 'uuid FK → profiles', fk: true },
+    { name: 'enrollment_id', type: 'uuid FK → enrollments', fk: true },
+    { name: 'status', type: 'submission_status enum' },
+    { name: 'storage_paths', type: 'jsonb (file path array)' },
+    { name: 'grade', type: 'smallint 0–100' },
+    { name: 'feedback, graded_by, graded_at', type: 'text, uuid FK, timestamptz' },
+  ]},
+  { name: 'teacher_course_assignments', color: 'var(--red)', desc: 'Scopes grading authority', rls: true, cols: [
+    { name: 'teacher_id', type: 'uuid PK FK → profiles', pk: true, fk: true },
+    { name: 'course_id', type: 'uuid PK FK → courses', pk: true, fk: true },
+    { name: 'assigned_at', type: 'timestamptz' },
+  ]},
+];
+
+const grid = document.getElementById('db-tables-grid');
+DB_TABLES.forEach(t => {
+  const card = document.createElement('div');
+  card.className = 'db-table';
+  card.innerHTML = `
+    <div class="db-table-header" style="background: ${t.color}18; color: ${t.color};">
+      ${t.name}
+      <span style="font-size:10px;color:var(--text3);font-weight:400;">${t.desc}</span>
+    </div>
+    ${t.cols.map(c => `
+      <div class="db-table-col">
+        ${c.pk ? '<span class="col-pk">PK</span>' : ''}
+        ${c.fk && !c.pk ? '<span class="col-fk">FK</span>' : ''}
+        ${!c.pk && !c.fk ? '<span style="width:22px;display:inline-block;"></span>' : ''}
+        <span class="col-name">${c.name}</span>
+        <span class="col-type">${c.type}</span>
+      </div>
+    `).join('')}
+  `;
+  grid.appendChild(card);
+});
+
+// ── Dependencies ──
+const DEPS_RUNTIME = [
+  { name: 'next', ver: '16.2.6', desc: 'App Router framework — RSC, Server Actions, proxy convention' },
+  { name: 'react / react-dom', ver: '19.2.4', desc: 'UI runtime with React Compiler support' },
+  { name: '@supabase/supabase-js', ver: '^2.106', desc: 'Supabase data access (PostgreSQL + Storage + Auth)' },
+  { name: '@supabase/ssr', ver: '^0.10.3', desc: 'Cookie-backed SSR bridge for browser/server client split' },
+  { name: '@11labs/react', ver: '^0.2.0', desc: 'ElevenLabs Conversational AI voice hook (marketing page)' },
+  { name: '@elevenlabs/client', ver: '^1.10.0', desc: 'ElevenLabs client SDK' },
+  { name: 'contentful', ver: '^11.12.3', desc: 'Contentful CMS SDK for blog posts' },
+  { name: '@contentful/rich-text-react-renderer', ver: '^16.2.1', desc: 'Renders Contentful rich-text as React elements' },
+  { name: '@contentful/rich-text-types', ver: '^17.2.7', desc: 'TypeScript types for Contentful rich-text' },
+  { name: 'framer-motion', ver: '^12.40.0', desc: 'Animation library used in marketing sections' },
+  { name: 'lucide-react', ver: '^1.18.0', desc: 'Icon library used across all dashboard components' },
+  { name: 'nodemailer', ver: '^8.0.9', desc: 'SMTP email transport for brochure + contact inquiry routes' },
+  { name: 'tus-js-client', ver: '^4.3.1', desc: 'TUS resumable upload protocol for lesson videos (500 MB)' },
+];
+
+const DEPS_DEV = [
+  { name: 'typescript', ver: '^5', desc: 'TypeScript compiler (strict mode)' },
+  { name: 'tailwindcss', ver: '^4', desc: 'CSS framework (v4 — @import "tailwindcss" syntax)' },
+  { name: '@tailwindcss/postcss', ver: '^4', desc: 'PostCSS plugin for Tailwind v4' },
+  { name: 'babel-plugin-react-compiler', ver: '1.0.0', desc: 'Enables React Compiler (auto-memoization)' },
+  { name: 'eslint', ver: '^9', desc: 'Linter' },
+  { name: 'eslint-config-next', ver: '16.2.6', desc: 'Next.js ESLint rules' },
+  { name: '@types/react / @types/react-dom', ver: '^19', desc: 'React TypeScript declarations' },
+  { name: '@types/node', ver: '^20', desc: 'Node.js TypeScript declarations' },
+  { name: '@types/nodemailer', ver: '^8.0.0', desc: 'Nodemailer TypeScript declarations' },
+];
+
+function renderDeps(data, containerId) {
+  const el = document.getElementById(containerId);
+  data.forEach(d => {
+    el.innerHTML += `<div class="dep-row">
+      <span class="dep-name">${d.name}</span>
+      <span class="dep-ver">${d.ver}</span>
+      <span class="dep-desc">${d.desc}</span>
+    </div>`;
+  });
+}
+
+renderDeps(DEPS_RUNTIME, 'deps-runtime');
+renderDeps(DEPS_DEV, 'deps-dev');
+</script>
+</body>
+</html>
