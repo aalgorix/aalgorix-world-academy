@@ -38,7 +38,7 @@ export default async function PublicCoursesPage() {
             </h1>
             <p className="mt-4 max-w-2xl text-lg text-slate-600">
               Live courses from our curriculum team. Enroll through your family dashboard
-              once your subscription is active.
+              once your enrollment is confirmed by the academy.
             </p>
           </div>
         </div>

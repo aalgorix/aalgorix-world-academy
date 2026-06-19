@@ -13,6 +13,7 @@ import {
   type CatalogActionState,
 } from "./actions";
 import { CreateCourseModal } from "./create-course-modal";
+import { EditCourseModal } from "./edit-course-modal";
 import { LessonMediaUploadZones } from "./lesson-media-upload-zones";
 import { UploadLessonVideo } from "./upload-lesson-video";
 import {
@@ -337,6 +338,7 @@ function LessonForm({
 
 function CourseCard({ course }: { course: CatalogCourse }) {
   const [expanded, setExpanded] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const [pending, startTransition] = useTransition();
   const [feedback, setFeedback] = useState<CatalogActionState | null>(null);
 
@@ -407,6 +409,13 @@ function CourseCard({ course }: { course: CatalogCourse }) {
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
+            className={secondaryButtonClassName}
+            onClick={() => setEditOpen(true)}
+          >
+            Edit
+          </button>
+          <button
+            type="button"
             disabled={pending}
             className={secondaryButtonClassName}
             onClick={() =>
@@ -455,6 +464,13 @@ function CourseCard({ course }: { course: CatalogCourse }) {
           <ModuleSection course={course} />
         </div>
       ) : null}
+
+      <EditCourseModal
+        course={course}
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        onSuccess={(message) => setFeedback({ ok: true, message })}
+      />
     </article>
   );
 }

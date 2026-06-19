@@ -10,7 +10,7 @@ const HELP_TOPIC_LABELS: Readonly<Record<string, string>> = {
   admissions: "Admissions & enrollment",
   "general-enquiry": "General enquiry",
   curriculum: "Curriculum & academic pathways",
-  "fees-billing": "Fees, billing & payment plans",
+  "fees-billing": "Fees & tuition enquiry",
   "technical-support": "Technical & platform support",
   partnerships: "Partnerships & media",
   other: "Something else",

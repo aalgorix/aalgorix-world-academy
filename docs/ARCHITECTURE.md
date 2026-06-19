@@ -2,6 +2,8 @@
 
 Premium EdTech LMS inspired by CambriLearn. This document defines the **directory layout**, **data model overview**, and **build sequence**. Implementation SQL lives in `supabase/migrations/`.
 
+> **Enterprise extension:** For the full Cambridge/NIOS Grades 3–12 specification (boards, batches, subject-scoped RBAC, ERD, API, deployment), see [`ENTERPRISE_ARCHITECTURE.md`](./ENTERPRISE_ARCHITECTURE.md).
+
 ---
 
 ## 1. Directory File Tree

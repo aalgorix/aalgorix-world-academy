@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 
-import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { unwrapOne } from "@/lib/dashboard/relations";
 import { createClient } from "@/lib/supabase/server";
 
@@ -214,12 +213,15 @@ export default async function TeacherGradingPage() {
   const metrics = buildMetrics(items);
 
   return (
-    <DashboardShell
-      eyebrow="Grading queue"
-      title="Teacher evaluation terminal"
-      subtitle="Review submissions across your assigned courses, download learner artifacts securely, and log scores with actionable feedback."
-    >
+    <div className="mx-auto w-full sd-float-up" style={{ maxWidth: 1320, padding: "28px 32px 80px" }}>
+      <div className="mb-6">
+        <p className="text-[12px] font-extrabold uppercase tracking-widest text-teal-600 mb-1">Grading queue</p>
+        <h1 className="text-[28px] font-extrabold tracking-tight text-slate-900">Teacher evaluation terminal</h1>
+        <p className="mt-1 text-[14px] font-medium text-slate-500">
+          Review submissions across your assigned courses, download learner artifacts securely, and log scores with actionable feedback.
+        </p>
+      </div>
       <GradingStation items={items} metrics={metrics} courseOptions={courseOptions} />
-    </DashboardShell>
+    </div>
   );
 }

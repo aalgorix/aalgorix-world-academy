@@ -39,15 +39,6 @@ create type public.submission_status as enum (
   'returned'
 );
 
-create type public.subscription_status as enum (
-  'trialing',
-  'active',
-  'past_due',
-  'canceled',
-  'unpaid',
-  'incomplete'
-);
-
 -- -----------------------------------------------------------------------------
 -- Profiles (1:1 with auth.users)
 -- -----------------------------------------------------------------------------
@@ -58,7 +49,6 @@ create table public.profiles (
   email text not null,
   full_name text,
   avatar_url text,
-  stripe_customer_id text unique,
   phone text,
   date_of_birth date,
   metadata jsonb not null default '{}'::jsonb,
@@ -78,7 +68,7 @@ create table public.student_parent_relations (
   parent_id uuid not null references public.profiles (id) on delete cascade,
   student_id uuid not null references public.profiles (id) on delete cascade,
   relationship_label text default 'parent',
-  is_primary_billing_contact boolean not null default false,
+  is_primary_contact boolean not null default false,
   created_at timestamptz not null default now(),
   unique (parent_id, student_id),
   check (parent_id <> student_id)
@@ -86,44 +76,6 @@ create table public.student_parent_relations (
 
 create index spr_parent_idx on public.student_parent_relations (parent_id);
 create index spr_student_idx on public.student_parent_relations (student_id);
-
--- -----------------------------------------------------------------------------
--- Subscription tiers (Stripe-backed)
--- -----------------------------------------------------------------------------
-
-create table public.subscription_tiers (
-  id uuid primary key default gen_random_uuid(),
-  slug text not null unique,
-  name text not null,
-  description text,
-  stripe_product_id text,
-  stripe_price_id text not null,
-  max_courses int,                    -- null = unlimited
-  sort_order int not null default 0,
-  is_active boolean not null default true,
-  features jsonb not null default '[]'::jsonb,
-  created_at timestamptz not null default now()
-);
-
--- -----------------------------------------------------------------------------
--- Subscriptions (owned by parent profile)
--- -----------------------------------------------------------------------------
-
-create table public.subscriptions (
-  id uuid primary key default gen_random_uuid(),
-  parent_id uuid not null references public.profiles (id) on delete cascade,
-  tier_id uuid not null references public.subscription_tiers (id),
-  stripe_subscription_id text not null unique,
-  stripe_customer_id text not null,
-  status public.subscription_status not null default 'active',
-  current_period_start timestamptz,
-  current_period_end timestamptz,
-  cancel_at_period_end boolean not null default false,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
-
-create index subscriptions_parent_idx on public.subscriptions (parent_id);
 
 -- -----------------------------------------------------------------------------
 -- Curriculum: courses → modules → lessons
@@ -184,7 +136,6 @@ create table public.enrollments (
   id uuid primary key default gen_random_uuid(),
   student_id uuid not null references public.profiles (id) on delete cascade,
   course_id uuid not null references public.courses (id) on delete cascade,
-  subscription_id uuid references public.subscriptions (id) on delete set null,
   status public.enrollment_status not null default 'pending',
   enrolled_at timestamptz,
   expires_at timestamptz,
@@ -316,10 +267,6 @@ create trigger lessons_updated_at
 
 create trigger enrollments_updated_at
   before update on public.enrollments
-  for each row execute function public.set_updated_at();
-
-create trigger subscriptions_updated_at
-  before update on public.subscriptions
   for each row execute function public.set_updated_at();
 
 create trigger assignments_updated_at
@@ -475,8 +422,6 @@ $$;
 
 alter table public.profiles enable row level security;
 alter table public.student_parent_relations enable row level security;
-alter table public.subscription_tiers enable row level security;
-alter table public.subscriptions enable row level security;
 alter table public.courses enable row level security;
 alter table public.course_modules enable row level security;
 alter table public.lessons enable row level security;
@@ -536,34 +481,6 @@ create policy "Admins manage relations"
   on public.student_parent_relations for all
   using (public.is_admin())
   with check (public.is_admin());
-
--- -----------------------------------------------------------------------------
--- RLS: subscription_tiers (public read for pricing page)
--- -----------------------------------------------------------------------------
-
-create policy "Anyone authenticated can read active tiers"
-  on public.subscription_tiers for select
-  using (is_active = true or public.is_admin());
-
-create policy "Admins manage tiers"
-  on public.subscription_tiers for all
-  using (public.is_admin())
-  with check (public.is_admin());
-
--- -----------------------------------------------------------------------------
--- RLS: subscriptions
--- -----------------------------------------------------------------------------
-
-create policy "Parents view own subscriptions"
-  on public.subscriptions for select
-  using (parent_id = auth.uid() or public.is_admin());
-
-create policy "Service role manages subscriptions"
-  on public.subscriptions for all
-  using (public.is_admin())
-  with check (public.is_admin());
-
--- Note: Stripe webhooks should use service_role key in Edge Function / API route.
 
 -- -----------------------------------------------------------------------------
 -- RLS: courses, modules, lessons

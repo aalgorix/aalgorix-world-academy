@@ -111,7 +111,7 @@ export default function SignupPage() {
               ))}
             </select>
             <p className="text-xs text-slate-400">
-              Parents manage billing and monitor progress. Students access courses.
+              Parents enroll children and monitor progress. Students access courses.
               Teachers grade work and support learners.
             </p>
           </div>

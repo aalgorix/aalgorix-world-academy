@@ -31,7 +31,7 @@ const HELP_TOPICS: ReadonlyArray<HelpTopicOption> = [
   { value: "admissions", label: "Admissions & enrollment" },
   { value: "general-enquiry", label: "General enquiry" },
   { value: "curriculum", label: "Curriculum & academic pathways" },
-  { value: "fees-billing", label: "Fees, billing & payment plans" },
+  { value: "fees-billing", label: "Fees & tuition enquiry" },
   { value: "technical-support", label: "Technical & platform support" },
   { value: "partnerships", label: "Partnerships & media" },
   { value: "other", label: "Something else" },

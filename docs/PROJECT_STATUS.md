@@ -1,9 +1,9 @@
 # Aalgorix World Academy — Engineering Source of Truth
 
 **Repository:** `aalgorix-world-academy`  
-**Document version:** 1.1  
-**Last updated:** May 2026  
-**Status:** Phase 0–1 complete · Marketing Landing Page Live · Navigation Core Stabilized · Production builds passing · Billing deferred to finale
+**Document version:** 2.2  
+**Last updated:** June 18, 2026  
+**Status:** Phase 0–8 substantially complete · Full Student Dashboard Suite live (12 pages) · Full Teacher Dashboard Suite live (9 pages) · Marketing Landing Page Live · Admin/Parent portals functional · **No payment integration — enrollment is admin-managed** · Zero tests
 
 ---
 
@@ -30,7 +30,7 @@ The platform is being constructed as a **modular monolith** on Next.js, with Pos
 | **Auth** | Supabase Auth | Email/password, Google OAuth, password recovery |
 | **Object storage** | Supabase Storage | Buckets documented; policies pending Phase 3+ |
 | **SSR auth bridge** | `@supabase/ssr` | Cookie-backed server/browser client split |
-| **Payments** | Stripe (tiered subscriptions) | **DEFERRED TO FINAL PHASE** — schema primitives exist (`subscription_tiers`, `subscriptions`); no application code yet |
+| **Payments** | None — offline tuition collection | Enrollment is created manually by admin after direct payment; no payment gateway integration |
 
 ### 1.3 Environment Contract
 
@@ -38,8 +38,7 @@ Configuration is driven by `.env.local` (see `.env.local.example`):
 
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` (or `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`)
-- `SUPABASE_SERVICE_ROLE_KEY` (server-only; webhooks in finale)
-- Stripe keys (reserved, unused until finale)
+- `SUPABASE_SERVICE_ROLE_KEY` (server-only; parent link code redemption)
 - `NEXT_PUBLIC_APP_URL`
 
 ### 1.4 Engineering attributions (presentation layer)
@@ -57,7 +56,7 @@ The initial public gateway is implemented without third-party UI kits. The follo
 
 ## 2. Completed Milestones (What Is Done)
 
-All items below have been implemented and verified via successful `npm run build` (Next.js 16 Turbopack production compilation).
+All items below have been implemented and verified via successful `npm run build` (Next.js 16 Turbopack production compilation) and `npx tsc --noEmit` (zero TypeScript errors).
 
 ### 2.1 Phase 0 — Foundation & Data Plane
 
@@ -171,9 +170,97 @@ Implemented in `src/app/auth/callback/route.ts` with open-redirect hardening via
 
 #### Dashboard stubs (redirect targets only)
 
-Minimal Server Component placeholders exist to validate routing—not product dashboards:
+Minimal Server Component placeholders existed post-Phase 1 and have since been replaced by full implementations. See Phase 3–7 below.
 
-- `/student`, `/parent`, `/teacher`, `/admin` under `src/app/(dashboard)/`
+---
+
+### 2.3 Phase 3 — Course Catalog, Storage & Admin Back-office ✅
+
+Full Admin course management and Teacher grading portals are implemented.
+
+| Deliverable | Status | Files |
+|-------------|--------|-------|
+| **Admin: Course CRUD** | ✅ Complete | `admin/courses/page.tsx`, `catalog-panel.tsx`, `actions.ts` |
+| **Admin: Module + Lesson CRUD** | ✅ Complete | Included in `admin/courses/actions.ts` |
+| **Admin: TUS video upload** | ✅ Complete | `lesson-media-upload-zones.tsx`, `upload-lesson-video.tsx` |
+| **Admin: Worksheet PDF upload** | ✅ Complete | XHR upload in `admin-media-upload.ts` |
+| **Admin: Publish/unpublish** | ✅ Complete | `toggleCoursePublished` server action |
+| **Admin: Teacher assignment** | ✅ Complete | `admin/staffing/` — `staffing-panel.tsx`, `assign-course-modal.tsx` |
+| **Teacher: Grading station** | ✅ Complete | `teacher/grading/` — `grading-station.tsx`, grade + feedback + return flow |
+| **Parent: Child linking** | ⚠️ Partial | UI complete; missing `parent_link_codes` DB migration |
+| **Parent: Progress monitoring** | ✅ Complete | `parent/page.tsx`, `course-progress-panel.tsx`, `grading-timeline.tsx` |
+| **Parent: Report card** | ✅ Complete | `parent/report-card/[childId]/page.tsx` |
+
+---
+
+### 2.4 Phase 4–5 — Student LMS Workspace ✅
+
+Full student lesson workspace and assignment lifecycle.
+
+| Deliverable | Status | Files |
+|-------------|--------|-------|
+| **Student: Course listing** | ✅ Complete | `student/courses/page.tsx` |
+| **Student: Lesson workspace** | ✅ Complete | `student/courses/[courseId]/lessons/[lessonId]/page.tsx` + `lesson-workspace.tsx` |
+| **Student: Lesson progress toggle** | ✅ Complete | `toggleLessonProgress` server action |
+| **Student: Homework submission** | ✅ Complete | `submitHomework` server action + file drag-drop |
+| **Student: Profile editing** | ✅ Complete | `student/profile/` + `profile-form.tsx` |
+| **Student: Parent link code gen** | ✅ Complete | `student/settings/actions.ts` (HMAC-SHA256, 24h TTL) |
+| **Content unlock engine** | ✅ Complete | `computeLessonStatuses()` in `workspace.ts` — all 4 strategies |
+
+---
+
+### 2.6 Phase 8 — Full Teacher Dashboard Suite ✅ (June 2026)
+
+The entire teacher-facing dashboard has been designed, implemented, and wired. All 9 navigation routes are live. The existing grading station is now embedded within the new shell.
+
+#### Teacher Shell (`components/teacher/teacher-shell.tsx`)
+Responsive teal-accented sidebar layout (full on desktop, icon-only on tablet, drawer on mobile) with 9 nav items, notification bell, search bar, and a mobile bottom tab bar.
+
+#### Teacher Layout (`app/(dashboard)/teacher/layout.tsx`)
+Server component that authenticates the user, verifies `teacher` (or `admin`) role, fetches the teacher's name and first assigned subject for the profile chip, and wraps all teacher routes in `TeacherShell`.
+
+#### All Teacher Pages
+
+| Route | Type | Data | Key Features |
+|-------|------|------|-------------|
+| `/teacher` | RSC | Real | Hero banner, 6 stat cards, recent submissions feed, per-course card grid, CTA to grading queue |
+| `/teacher/grading` | RSC + Client | Real | Full grading station — existing feature, now wrapped in teacher shell |
+| `/teacher/courses` | RSC | Real | Course cards with enrollment count, pending submission count, publish status, grade-action link |
+| `/teacher/students` | RSC | Real | All enrolled students across assigned courses; per-course chip filters, avatars, enrolment info |
+| `/teacher/schedule` | Client | Mock | Interactive monthly calendar, selected-day event panel, upcoming events sidebar |
+| `/teacher/messages` | Client | Mock | Two-panel chat (contacts + thread), quick reply suggestions, typing indicator |
+| `/teacher/reports` | RSC | Real | Grade distribution bar chart, per-course avg % and pending count from real submission data |
+| `/teacher/profile` | RSC | Real | Profile card with avatar, email, courses assigned, teaching responsibilities grid |
+| `/teacher/settings` | Client | Local state | Theme toggle, language picker, notification toggles, security, privacy |
+
+---
+
+### 2.5 Phase 6–7 — Full Student Dashboard Suite ✅ (June 2026)
+
+The entire student-facing dashboard has been designed, implemented and wired. All 12 navigation routes are live.
+
+#### Student Shell (`components/student/student-shell.tsx`)
+Responsive sidebar layout (full on desktop, icon-only on tablet, drawer on mobile) with 12 nav items and a mobile bottom tab bar.
+
+#### Dashboard Home (`student/page.tsx`)
+Rich interactive home page: `HeroBanner`, stat rings, today's schedule, continue-learning course cards, performance charts, AI tutor card, pending submissions, notifications, attendance mini-heatmap, and badges. Uses real Supabase data for enrollments, progress, and submissions; mock data for streak/schedule/notifications.
+
+#### All Student Pages
+
+| Route | Type | Data | Key Features |
+|-------|------|------|-------------|
+| `/student/courses` | RSC | Real | Progress bars, In Progress / Completed sections |
+| `/student/live` | Client | Mock | Live hero banner, week-at-a-glance, Today/Week/Recordings tabs |
+| `/student/assignments` | RSC + Client | Real | `AssignmentsList` — tabbed by All/Todo/Submitted/Graded/Needs Revision |
+| `/student/assessments` | Client | Mock | Upcoming/Results/Performance tabs with animated score bars |
+| `/student/attendance` | Client | Mock | Monthly calendar heatmap, ring chart (%), breakdown stat cards |
+| `/student/tutor` | Client | Simulated | Full chat UI, typing indicator, quick chips, voice toggle |
+| `/student/certificates` | Client | Mock | Badges (earned/locked grid) + Certificates (download + share); Scholar progress bar |
+| `/student/reports` | RSC | Real + mock charts | Per-course progress bars, avg grade, `PerformanceCharts` with real subject data |
+| `/student/messages` | Client | Mock | Two-panel (contacts + thread), send messages, unread badges |
+| `/student/calendar` | Client | Mock | Monthly grid, event dots, click-to-view events, upcoming sidebar |
+| `/student/notifications` | RSC | Real | Pending + submitted submissions |
+| `/student/settings` | Client | Local state | Theme toggle, language picker, notification toggles, security, privacy |
 
 ---
 
@@ -205,60 +292,124 @@ The primary public-facing presentation layer is **fully implemented and live** a
 
 ## 3. Directory Structure Map
 
-**Implemented tree (Phase 0–1 + marketing gateway):**
+**Current implemented tree (Phase 0–7, as of June 18, 2026):**
 
 ```
 aalgorix-world-academy/
 ├── docs/
-│   ├── ARCHITECTURE.md          # Target full-repo layout & original phase plan
-│   └── PROJECT_STATUS.md        # This document (engineering source of truth)
+│   ├── ARCHITECTURE.md              # Original architecture target & phase plan
+│   ├── ENTERPRISE_ARCHITECTURE.md   # Cambridge/NIOS enterprise LMS spec (boards, batches, RBAC, ERD)
+│   ├── PROJECT_STATUS.md            # This file (engineering source of truth)
+│   └── MASTER_DOCUMENTATION.md     # Full CTO audit document
+├── design-reference/                # UI design references (HTML mockups)
 ├── supabase/
 │   └── migrations/
-│       └── 20250521000000_foundation.sql
+│       ├── 20250521000000_foundation.sql   # Complete schema + RLS (13 tables)
+│       └── 20250620000000_platform_settings.sql  # Admin platform settings singleton
 ├── .env.local.example
 ├── next.config.ts               # reactCompiler: true
 ├── package.json
+├── vercel.json                  # Apex → www permanent redirect
 ├── src/
 │   ├── proxy.ts                 # ◄ Next.js 16 edge proxy entry (session + RBAC routing)
 │   ├── app/
 │   │   ├── layout.tsx           # Root HTML shell, Geist fonts, metadata
-│   │   ├── globals.css          # Tailwind v4 @theme tokens
+│   │   ├── globals.css          # Tailwind v4 @theme tokens + sd-float-up animations
 │   │   │
-│   │   ├── (marketing)/         # ◄ Public gateway (route group, serves /)
-│   │   │   ├── layout.tsx       # Marketing shell + metadata
-│   │   │   ├── page.tsx         # Full CambriLearn-formula landing (RSC)
-│   │   │   └── marketing-nav.tsx  # Client island: sticky nav + mobile drawer
-│   │   │
-│   │   ├── (auth)/              # ◄ Unauthenticated auth UX (route group, no URL segment)
+│   │   ├── (marketing)/         # Public gateway — serves /
 │   │   │   ├── layout.tsx
-│   │   │   ├── login/
-│   │   │   │   ├── page.tsx     # Suspense boundary
-│   │   │   │   └── login-form.tsx
-│   │   │   ├── signup/page.tsx
-│   │   │   ├── forgot-password/page.tsx
-│   │   │   └── reset-password/page.tsx
+│   │   │   ├── page.tsx         # Full CambriLearn-formula landing (RSC)
+│   │   │   ├── marketing-nav.tsx
+│   │   │   ├── marketing-footer.tsx
+│   │   │   ├── animated-stats.tsx
+│   │   │   ├── brochure-modal-cta.tsx
+│   │   │   ├── published-courses-section.tsx
+│   │   │   ├── academics/, ai-tutor/, ai-voice-assistant/
+│   │   │   ├── blog/            # Contentful-driven blog
+│   │   │   ├── contact/, courses/, donate/, extracurricular/
+│   │   │   ├── faq/, our-story/, parent-portal/, why-us/
 │   │   │
-│   │   ├── (dashboard)/         # ◄ Authenticated shell (session required)
+│   │   ├── (auth)/              # Unauthenticated auth UX
+│   │   │   ├── login/           # Email + Google OAuth
+│   │   │   ├── signup/          # Role selector
+│   │   │   ├── forgot-password/
+│   │   │   └── reset-password/
+│   │   │
+│   │   ├── (dashboard)/         # All authenticated LMS surfaces
 │   │   │   ├── layout.tsx       # Server-side getUser() gate
-│   │   │   ├── student/page.tsx
-│   │   │   ├── parent/page.tsx
-│   │   │   ├── teacher/page.tsx
-│   │   │   └── admin/page.tsx
+│   │   │   │
+│   │   │   ├── student/         # ◄ FULL SUITE (12 pages)
+│   │   │   │   ├── layout.tsx       # StudentShell wrapper (fetches user profile)
+│   │   │   │   ├── page.tsx         # Dashboard home — rich stats + widgets
+│   │   │   │   ├── revision-alert-ribbon.tsx
+│   │   │   │   ├── courses/page.tsx
+│   │   │   │   ├── courses/[courseId]/lessons/[lessonId]/
+│   │   │   │   │   ├── page.tsx, lesson-workspace.tsx
+│   │   │   │   │   ├── curriculum-sidebar.tsx, actions.ts
+│   │   │   │   ├── live/page.tsx        # Live sessions + recordings
+│   │   │   │   ├── assignments/page.tsx # Real Supabase data
+│   │   │   │   ├── assessments/page.tsx # Mock data
+│   │   │   │   ├── attendance/page.tsx  # Mock data
+│   │   │   │   ├── tutor/page.tsx       # AI chat UI
+│   │   │   │   ├── certificates/page.tsx
+│   │   │   │   ├── reports/page.tsx     # Real Supabase data + charts
+│   │   │   │   ├── messages/page.tsx    # Mock data
+│   │   │   │   ├── calendar/page.tsx    # Mock data
+│   │   │   │   ├── notifications/page.tsx
+│   │   │   │   ├── profile/             # Profile form + avatar
+│   │   │   │   └── settings/page.tsx    # Theme/notif/security/privacy prefs
+│   │   │   │
+│   │   │   ├── teacher/
+│   │   │   │   ├── page.tsx
+│   │   │   │   └── grading/             # Grading station
+│   │   │   │
+│   │   │   ├── parent/
+│   │   │   │   ├── page.tsx
+│   │   │   │   ├── report-card/[childId]/
+│   │   │   │   └── settings/            # Link code redemption
+│   │   │   │
+│   │   │   └── admin/
+│   │   │       ├── page.tsx
+│   │   │       ├── courses/             # Full course CRUD + media upload
+│   │   │       └── staffing/            # Teacher assignment
 │   │   │
-│   │   └── auth/
-│   │       └── callback/route.ts  # ◄ PKCE / OAuth / recovery code exchange
+│   │   ├── api/
+│   │   │   ├── brochure/route.ts
+│   │   │   └── contact-inquiry/route.ts
+│   │   └── auth/callback/route.ts       # PKCE/OAuth code exchange
 │   │
-│   ├── components/auth/         # Presentational auth primitives
-│   ├── lib/
-│   │   ├── env.ts
-│   │   ├── auth/
-│   │   │   ├── roles.ts         # Role enums + signup whitelist
-│   │   │   └── redirects.ts     # Dashboard paths, safeRedirectPath, recovery exceptions
-│   │   └── supabase/
-│   │       ├── client.ts        # Browser Supabase client
-│   │       ├── server.ts        # Server Supabase client
-│   │       └── middleware.ts    # updateSession() — consumed by proxy.ts
-│   └── (no src/middleware.ts — superseded by proxy.ts in Next.js 16)
+│   ├── components/
+│   │   ├── auth/                # Auth UI primitives
+│   │   ├── blog/                # Blog card + rich-text renderer
+│   │   ├── brand/               # AWA logo
+│   │   ├── dashboard/           # Shared: dashboard-shell, stat-card, action-card
+│   │   └── student/             # ◄ All student dashboard widgets
+│   │       ├── student-shell.tsx        # Full sidebar + topbar + mobile nav
+│   │       ├── hero-banner.tsx
+│   │       ├── stat-ring-card.tsx
+│   │       ├── continue-learning.tsx
+│   │       ├── todays-schedule.tsx
+│   │       ├── performance-charts.tsx   # Supports real subjectStats prop
+│   │       ├── ai-tutor-card.tsx
+│   │       ├── pending-submissions-card.tsx
+│   │       ├── notifications-card.tsx
+│   │       ├── attendance-mini-card.tsx
+│   │       ├── badges-section.tsx
+│   │       └── assignments-list.tsx     # Tabbed assignment list (client)
+│   │
+│   └── lib/
+│       ├── env.ts, domains.ts, app-auth-href.ts
+│       ├── auth/                # roles.ts, redirects.ts
+│       ├── supabase/            # client.ts, server.ts, admin.ts, middleware.ts
+│       ├── contentful/          # Full CMS integration
+│       ├── curriculum/          # public-catalog.ts
+│       ├── dashboard/           # course-progress.ts, relations.ts, submission-status.ts
+│       ├── email/               # smtp.ts
+│       ├── parent-link/         # HMAC link code system
+│       ├── routing/             # host-routing.ts
+│       ├── storage/             # TUS video + XHR PDF upload
+│       ├── student/             # workspace.ts, curriculum-types.ts
+│       └── theme/               # global-theme.ts
 ```
 
 ### Layer purposes (inline reference)
@@ -324,13 +475,15 @@ Phases are ordered for **vertical slice delivery**. **Stripe billing is intentio
 |-------|------|-------|----------------------|
 | **0** | Foundation | ✅ **Complete** | SQL migration, RLS shell, architecture docs |
 | **1** | Auth & Identity | ✅ **Complete** | SSR clients, proxy gate, email/Google OAuth, password recovery, role routing |
-| **1b** | Public Marketing Gateway | ✅ **Complete** | `(marketing)` route group, full landing at `/`, sticky nav + mobile drawer, Tailwind v4 + React Compiler verified |
-| **3** | Course Catalog & Storage | 🔜 Next | Admin course CRUD (`courses` → `course_modules` → `lessons`), Supabase Storage buckets + policies, dynamic curriculum data wired into marketing pathways |
-| **4** | Student LMS Workspace | 🔜 Planned | Interactive course player, recursive sidebar navigation tree, HTML5 video element, assignment submission dropzone, `content_unlocks` engine tied to `lesson_progress` |
-| **5** | Teacher Portal & Grading Queue | 🔜 Planned | Homework downloads from Storage, feedback logs, 0–100 grade indexing, `teacher_course_assignments` scoped queues |
-| **6** | Parent Performance Dashboard | 🔜 Planned | Multi-child selector dropdowns, aggregate progress trackers, read-only grading report access via `parent_has_student()` RLS |
-| **7** | Back-Office Management Catalog | 🔜 Planned | Admin interfaces for curriculum editing, user provisioning, instructor-to-course mapping, enrollment administration |
-| **2 (FINALE)** | Stripe Subscription Integration | 🔜 **Last** | Checkout Sessions, Customer Portal, signed webhooks (`service_role`), `subscriptions` + `enrollments` activation sync, tier gating |
+| **1b** | Public Marketing Gateway | ✅ **Complete** | `(marketing)` route group, full landing at `/`, sticky nav + mobile drawer, 12+ marketing pages |
+| **3** | Course Catalog & Storage | ✅ **Complete** | Admin course CRUD, TUS video upload, worksheet upload, teacher assignment, publish/unpublish |
+| **4** | Student LMS Workspace | ✅ **Complete** | Lesson workspace, video player, homework submission, content unlock engine, lesson progress |
+| **5** | Teacher Portal & Grading Queue | ✅ **Complete** | Grading station, file download, grade 0–100, return for revision |
+| **6** | Parent Performance Dashboard | ✅ **Complete** (partial) | Progress monitoring, report card, child linking (link code redemption UI; missing DB migration) |
+| **7** | Full Student Dashboard Suite | ✅ **Complete** | All 12 student routes: dashboard, courses, live, assignments, assessments, attendance, AI tutor, certificates, reports, messages, calendar, settings |
+| **8** | Full Teacher Dashboard Suite | ✅ **Complete** | All 9 teacher routes: dashboard, grading, courses, students, schedule, messages, reports, profile, settings |
+| **9** | Real Data Wiring | 🔜 Next | Replace mock data in teacher schedule/messages, student attendance, calendar, live, assessments |
+| **Next** | Admin polish | 🔶 In progress | Course edit, enrollment lifecycle, user edit, platform settings (`platform_settings` migration) |
 
 ### 5.1 Phase dependency graph (logical)
 
@@ -352,13 +505,28 @@ Phase 0 ──► Phase 1 ──► Phase 3 (Catalog)
                     Phase 2 FINALE (Stripe)
 ```
 
-### 5.2 Explicitly out of scope (current sprint)
+### 5.2 Next priorities (current sprint)
+
+The following remain to be completed before MVP readiness:
+
+1. **Add `parent_link_codes` migration** to Supabase (2h)
+2. **Admin enrollment management UI** — `/admin/enrollments` page (1 week)
+3. **Admin user provisioning UI** — `/admin/users` page (1 week)
+4. **Test suite** — Vitest unit tests + Playwright E2E (1 week)
+5. **Error monitoring** — Sentry or Vercel Error Tracking (4h)
+6. **Security headers** in `next.config.ts` (2h)
+7. **Real DB tables** for attendance, messages, calendar events, live class sessions
+
+### 5.3 Explicitly out of scope (longer term)
 
 - shadcn/ui component installation and design system tokens
-- Stripe Checkout, webhooks, and `api/webhooks/stripe`
+- Payment/billing integration (removed by design — offline tuition collection)
 - Dynamic CMS-driven marketing copy (pathways currently static in `page.tsx`)
-- Real-time messaging, live classes, quiz engine, certificates
+- Real-time messaging (Supabase Realtime), live classes backend (Jitsi/Daily.co)
+- Quiz/Assessment engine backend
+- Certificate PDF generation (react-pdf)
 - Multi-organization white-label tenancy
+- Progressive Web App (PWA)
 
 ---
 
@@ -367,20 +535,27 @@ Phase 0 ──► Phase 1 ──► Phase 3 (Catalog)
 | Check | Command / action |
 |-------|------------------|
 | Production compile | `npm run build` |
-| Local dev + marketing | `npm run dev` → `http://localhost:3000` — verify hero, section anchors, `/login` & `/signup` CTAs, mobile drawer on physical device |
+| TypeScript check | `npx tsc --noEmit` — must return zero errors |
+| Lint | `npm run lint` |
+| Local dev + marketing | `npm run dev` → `http://localhost:3000` |
 | DB tables | Supabase Table Editor → 13 `public` tables |
 | Google OAuth | `/login` → Continue with Google → role dashboard |
 | Password recovery | `/forgot-password` → email → `/reset-password` → dashboard |
 | Proxy active | Build output lists `ƒ Proxy (Middleware)` |
+| Student dashboard | `/student` — verify all 12 sidebar nav links resolve without 404 |
+| Student assignments | `/student/assignments` — verify real data loads from Supabase |
+| Student reports | `/student/reports` — verify real course progress + grades appear |
+| Student AI tutor | `/student/tutor` — verify chat sends and receives responses |
 
 ## Appendix B — Related documentation
 
 | Document | Location |
 |----------|----------|
 | Target architecture & full future tree | `docs/ARCHITECTURE.md` |
+| Enterprise LMS spec (Cambridge/NIOS, batches, RBAC, ERD, API) | `docs/ENTERPRISE_ARCHITECTURE.md` |
 | Database DDL + RLS source | `supabase/migrations/20250521000000_foundation.sql` |
 | Agent / Next.js 16 conventions | `AGENTS.md` |
 
 ---
 
-*This file is the engineering source of truth for repository state. Update it at the completion of each phase.*
+*This file is the engineering source of truth for repository state. **It is kept up to date after every significant code change.** Last updated: June 18, 2026.*

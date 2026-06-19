@@ -312,6 +312,117 @@ export async function toggleCoursePublished(
   };
 }
 
+export async function updateCourse(
+  _prev: CatalogActionState | null,
+  formData: FormData,
+): Promise<CatalogActionState> {
+  const ctx = await requireAdmin();
+  if ("error" in ctx) {
+    return { ok: false, error: ctx.error };
+  }
+
+  const courseId = readString(formData, "course_id");
+  const title = readString(formData, "title");
+  if (!courseId) {
+    return { ok: false, error: "Course is required." };
+  }
+  if (!title) {
+    return { ok: false, error: "Course title is required." };
+  }
+
+  const unlockStrategyRaw = readString(formData, "unlock_strategy") || "sequential";
+  const unlockStrategy = isUnlockStrategy(unlockStrategyRaw)
+    ? unlockStrategyRaw
+    : "sequential";
+
+  const dripIntervalDays =
+    unlockStrategy === "drip" ? readOptionalInt(formData, "drip_interval_days") : null;
+
+  const { error } = await ctx.supabase
+    .from("courses")
+    .update({
+      title,
+      description: readString(formData, "description") || null,
+      grade_level: readString(formData, "grade_level") || null,
+      curriculum_tag: readString(formData, "curriculum_tag") || null,
+      thumbnail_url: readString(formData, "thumbnail_url") || null,
+      unlock_strategy: unlockStrategy,
+      drip_interval_days: dripIntervalDays,
+    })
+    .eq("id", courseId);
+
+  if (error) {
+    return { ok: false, error: error.message };
+  }
+
+  revalidateCatalog();
+  return { ok: true, message: `Course “${title}” updated.` };
+}
+
+export async function updateModule(
+  _prev: CatalogActionState | null,
+  formData: FormData,
+): Promise<CatalogActionState> {
+  const ctx = await requireAdmin();
+  if ("error" in ctx) {
+    return { ok: false, error: ctx.error };
+  }
+
+  const moduleId = readString(formData, "module_id");
+  const title = readString(formData, "title");
+  if (!moduleId || !title) {
+    return { ok: false, error: "Module and title are required." };
+  }
+
+  const { error } = await ctx.supabase
+    .from("course_modules")
+    .update({
+      title,
+      description: readString(formData, "description") || null,
+    })
+    .eq("id", moduleId);
+
+  if (error) {
+    return { ok: false, error: error.message };
+  }
+
+  revalidateCatalog();
+  return { ok: true, message: `Module “${title}” updated.` };
+}
+
+export async function updateLesson(
+  _prev: CatalogActionState | null,
+  formData: FormData,
+): Promise<CatalogActionState> {
+  const ctx = await requireAdmin();
+  if ("error" in ctx) {
+    return { ok: false, error: ctx.error };
+  }
+
+  const lessonId = readString(formData, "lesson_id");
+  const title = readString(formData, "title");
+  if (!lessonId || !title) {
+    return { ok: false, error: "Lesson and title are required." };
+  }
+
+  const { error } = await ctx.supabase
+    .from("lessons")
+    .update({
+      title,
+      description: readString(formData, "description") || null,
+      video_duration_seconds: readOptionalInt(formData, "video_duration_seconds"),
+      is_preview: readBoolean(formData, "is_preview"),
+    })
+    .eq("id", lessonId);
+
+  if (error) {
+    return { ok: false, error: error.message };
+  }
+
+  revalidateCatalog();
+  return { ok: true, message: `Lesson “${title}” updated.` };
+}
+
 export async function deleteCourse(courseId: string): Promise<CatalogActionState> {
   const ctx = await requireAdmin();
   if ("error" in ctx) {

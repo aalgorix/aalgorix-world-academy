@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { isUserRole, type UserRole } from "@/lib/auth/roles";
 import { createClient } from "@/lib/supabase/server";
 
@@ -78,21 +77,17 @@ export default async function AdminStaffingPage() {
       profilesError?.message ?? coursesError?.message ?? assignmentsError?.message;
 
     return (
-      <DashboardShell
-        eyebrow="Phase 7 · Staffing"
-        title="Staffing registry"
-        subtitle="Administrative staffing and course allocation controls."
-      >
+      <div className="mx-auto w-full" style={{ maxWidth: 1320, padding: "28px 32px 80px" }}>
+        <div className="mb-6">
+          <h1 className="text-[28px] font-extrabold tracking-tight text-slate-900">Staffing registry</h1>
+        </div>
         <p className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
           Could not load staffing data: {message}
         </p>
-        <Link
-          href="/admin"
-          className="mt-4 inline-block text-sm font-medium text-indigo-600"
-        >
+        <Link href="/admin" className="mt-4 inline-block text-sm font-medium text-violet-600">
           ← Admin home
         </Link>
-      </DashboardShell>
+      </div>
     );
   }
 
@@ -133,39 +128,29 @@ export default async function AdminStaffingPage() {
   const linkedTeachers = new Set(assignments.map((a) => a.teacher_id)).size;
 
   return (
-    <DashboardShell
-      eyebrow="Phase 7 · Staffing"
-      title="Staffing & course allocation"
-      subtitle="Registry monitor for every account in the tenant. Link published courses to teachers via teacher_course_assignments."
-    >
+    <div className="mx-auto w-full sd-float-up" style={{ maxWidth: 1320, padding: "28px 32px 80px" }}>
+      <div className="mb-6">
+        <h1 className="text-[28px] font-extrabold tracking-tight text-slate-900">Staffing & Course Allocation</h1>
+        <p className="mt-1 text-[14px] font-medium text-slate-500">
+          Registry monitor for every account in the tenant. Link published courses to teachers via teacher_course_assignments.
+        </p>
+      </div>
+
       <div className="mb-8 grid gap-4 sm:grid-cols-3">
-        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-            Registered accounts
-          </p>
-          <p className="mt-2 text-3xl font-bold tabular-nums text-slate-900">
-            {profiles.length}
-          </p>
-        </div>
-        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-            Teacher profiles
-          </p>
-          <p className="mt-2 text-3xl font-bold tabular-nums text-slate-900">
-            {teacherCount}
-          </p>
-        </div>
-        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-            Teachers with allocations
-          </p>
-          <p className="mt-2 text-3xl font-bold tabular-nums text-slate-900">
-            {linkedTeachers}
-          </p>
-        </div>
+        {[
+          { label: "Registered accounts",      value: profiles.length, bg: "#EDE9FE", color: "#7C3AED" },
+          { label: "Teacher profiles",          value: teacherCount,    bg: "#CCFBF1", color: "#0D9488" },
+          { label: "Teachers with allocations", value: linkedTeachers,  bg: "#D1FAE5", color: "#065F46" },
+        ].map(({ label, value, bg, color }) => (
+          <div key={label} className="rounded-[20px] border border-slate-200 bg-white p-5"
+            style={{ boxShadow: "0 1px 2px rgba(0,0,0,.04),0 4px 12px rgba(0,0,0,.03)" }}>
+            <p className="text-[11.5px] font-extrabold uppercase tracking-wider text-slate-500">{label}</p>
+            <p className="mt-2 text-[32px] font-extrabold tabular-nums" style={{ color }}>{value}</p>
+          </div>
+        ))}
       </div>
 
       <StaffingPanel data={data} />
-    </DashboardShell>
+    </div>
   );
 }

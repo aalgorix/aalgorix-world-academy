@@ -10,6 +10,7 @@ import {
   ClipboardCheck,
   ClipboardList,
   GraduationCap,
+  HelpCircle,
   LayoutDashboard,
   Menu,
   MessageCircle,
@@ -17,12 +18,15 @@ import {
   Settings,
   Sparkles,
   TrendingUp,
+  User,
   Video,
   X,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { type ReactNode, useState } from "react";
+
+import { ProfileDropdown } from "@/components/ui/profile-dropdown";
 
 // ---------------------------------------------------------------------------
 // Nav definition
@@ -46,7 +50,7 @@ const NAV_ITEMS: Omit<NavItem, "icon">[] = [
   { key: "assignments",  label: "Assignments",       href: "/student/assignments", badge: "3" },
   { key: "assessments",  label: "Assessments",       href: "/student/assessments" },
   { key: "attendance",   label: "Attendance",        href: "/student/attendance" },
-  { key: "tutor",        label: "AI Tutor",          href: "/student/tutor" },
+  { key: "tutor",        label: "Aalgo AI",          href: "/student/tutor" },
   { key: "certificates", label: "Certificates",      href: "/student/certificates" },
   { key: "reports",      label: "Progress Reports",  href: "/student/reports" },
   { key: "messages",     label: "Messages",          href: "/student/messages", badge: "2" },
@@ -249,7 +253,7 @@ export function StudentShell({
 
           {/* right actions */}
           <div className="flex items-center gap-2.5 ml-auto shrink-0">
-            {/* ask AI tutor */}
+            {/* ask Aalgo */}
             <Link
               href="/student/tutor"
               className="hidden sm:flex items-center gap-2 text-white text-[13px] font-bold px-4 py-2.5 rounded-[12px] transition-opacity hover:opacity-90"
@@ -259,7 +263,7 @@ export function StudentShell({
               }}
             >
               <Sparkles className="w-[17px] h-[17px]" />
-              <span className="hidden lg:inline">Ask AI Tutor</span>
+              <span className="hidden lg:inline">Ask Aalgo</span>
             </Link>
 
             {/* notification bell */}
@@ -271,28 +275,31 @@ export function StudentShell({
               <span className="absolute top-[9px] right-[10px] w-2 h-2 bg-[#FB7185] border-2 border-white rounded-full" />
             </Link>
 
-            {/* avatar + name */}
-            <Link
-              href="/student/profile"
-              className="flex items-center gap-2 border border-[#ECEDF3] bg-white px-1.5 py-1.5 rounded-[13px] transition-colors hover:border-[#DDE0FF]"
-            >
-              <div
-                className="w-8 h-8 rounded-[9px] flex items-center justify-center text-white font-extrabold text-sm shrink-0"
-                style={{
-                  background: "linear-gradient(135deg,#FBBF24,#F59E0B)",
-                }}
-              >
-                {initial}
-              </div>
-              <div className="hidden lg:block text-left pr-1.5">
-                <div className="text-[13px] font-bold text-[#1A1B2E] leading-tight">
-                  {displayName}
+            {/* avatar + name — dropdown */}
+            <ProfileDropdown
+              displayName={displayName}
+              subtitle={gradeLabel}
+              trigger={
+                <div className="flex items-center gap-2 border border-[#ECEDF3] bg-white px-1.5 py-1.5 rounded-[13px] transition-colors hover:border-[#DDE0FF] cursor-pointer">
+                  <div
+                    className="w-8 h-8 rounded-[9px] flex items-center justify-center text-white font-extrabold text-sm shrink-0"
+                    style={{ background: "linear-gradient(135deg,#FBBF24,#F59E0B)" }}
+                  >
+                    {initial}
+                  </div>
+                  <div className="hidden lg:block text-left pr-1.5">
+                    <div className="text-[13px] font-bold text-[#1A1B2E] leading-tight">{displayName}</div>
+                    <div className="text-[10.5px] font-semibold text-[#9AA0B8] font-mono">{gradeLabel}</div>
+                  </div>
                 </div>
-                <div className="text-[10.5px] font-semibold text-[#9AA0B8] font-mono">
-                  {gradeLabel}
-                </div>
-              </div>
-            </Link>
+              }
+              items={[
+                { label: "View profile",   href: "/student/settings", icon: <User        size={15} /> },
+                { label: "Settings",       href: "/student/settings", icon: <Settings    size={15} /> },
+                { label: "Messages",       href: "/student/messages", icon: <MessageCircle size={15} /> },
+                { label: "Help & support", href: "/contact",          icon: <HelpCircle  size={15} /> },
+              ]}
+            />
           </div>
         </header>
 

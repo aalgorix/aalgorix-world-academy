@@ -133,7 +133,7 @@ export async function connectChildWithLinkCode(
       parent_id: ctx.userId,
       student_id: linkRow.student_id,
       relationship_label: "parent",
-      is_primary_billing_contact: false,
+      is_primary_contact: false,
     });
 
   if (relationError) {
