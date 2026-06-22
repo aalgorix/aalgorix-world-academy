@@ -1,7 +1,10 @@
 "use client";
 
-import { useConversation } from "@11labs/react";
-import type { Status } from "@11labs/react";
+import {
+  ConversationProvider,
+  useConversation,
+  type ConversationStatus,
+} from "@elevenlabs/react";
 import { useCallback, useState } from "react";
 
 /* ============================================================
@@ -16,13 +19,19 @@ const AGENT_ID = process.env.NEXT_PUBLIC_ELEVENLABS_AGENT_ID ?? "";
 
 type UIState = "idle" | "connecting" | "listening" | "speaking" | "ending" | "error";
 
-function resolveUIState(status: Status, isSpeaking: boolean, hasError: boolean): UIState {
-  if (hasError) return "error";
+function resolveUIState(
+  status: ConversationStatus,
+  isSpeaking: boolean,
+  hasError: boolean,
+): UIState {
+  if (hasError || status === "error") return "error";
   switch (status) {
-    case "connecting":    return "connecting";
-    case "disconnecting": return "ending";
-    case "connected":     return isSpeaking ? "speaking" : "listening";
-    default:              return "idle";
+    case "connecting":
+      return "connecting";
+    case "connected":
+      return isSpeaking ? "speaking" : "listening";
+    default:
+      return "idle";
   }
 }
 
@@ -91,14 +100,6 @@ function SoundWaveBars() {
   );
 }
 
-function StopIcon() {
-  return (
-    <svg viewBox="0 0 24 24" className="h-10 w-10 text-white sm:h-12 sm:w-12" fill="currentColor" aria-hidden>
-      <rect x="6" y="6" width="12" height="12" rx="2" />
-    </svg>
-  );
-}
-
 function SpinnerIcon() {
   return (
     <svg
@@ -142,10 +143,13 @@ function ConfigError() {
    ============================================================ */
 
 export function VoiceAssistant() {
-  /* Guard: agent ID must be configured */
   if (!AGENT_ID) return <ConfigError />;
 
-  return <VoiceAssistantInner />;
+  return (
+    <ConversationProvider agentId={AGENT_ID}>
+      <VoiceAssistantInner />
+    </ConversationProvider>
+  );
 }
 
 function VoiceAssistantInner() {
@@ -166,8 +170,8 @@ function VoiceAssistantInner() {
   });
 
   const uiState = resolveUIState(status, isSpeaking, errorMsg !== null);
-  const isActive = status === "connected" || status === "connecting" || status === "disconnecting";
-  const isLoading = status === "connecting" || status === "disconnecting";
+  const isActive = status === "connected" || status === "connecting";
+  const isLoading = status === "connecting";
   const { label, dot, text } = STATUS_META[uiState];
   const { from, to, glow } = BTN_META[uiState];
   const ringColor = RING_COLOR[uiState];
@@ -175,13 +179,12 @@ function VoiceAssistantInner() {
   const handleToggle = useCallback(async () => {
     setErrorMsg(null);
     if (isActive) {
-      await endSession();
+      endSession();
       return;
     }
     try {
-      /* Explicitly request mic permission for clear browser prompt */
       await navigator.mediaDevices.getUserMedia({ audio: true });
-      await startSession({ agentId: AGENT_ID });
+      startSession();
     } catch (err) {
       if (err instanceof Error && err.name === "NotAllowedError") {
         setErrorMsg("Microphone access was denied. Please allow access in your browser settings and try again.");
@@ -271,9 +274,10 @@ function VoiceAssistantInner() {
               ].join(" ")}
             >
               {uiState === "connecting" && <SpinnerIcon />}
-              {uiState === "speaking"   && <SoundWaveBars />}
-              {uiState === "ending"     && <StopIcon />}
-              {(uiState === "idle" || uiState === "listening" || uiState === "error") && <MicrophoneIcon />}
+              {uiState === "speaking" && <SoundWaveBars />}
+              {(uiState === "idle" || uiState === "listening" || uiState === "error") && (
+                <MicrophoneIcon />
+              )}
             </button>
           </div>
 

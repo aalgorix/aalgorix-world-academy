@@ -1,20 +1,12 @@
 import { type NextRequest } from "next/server";
 
-import {
-  resolveCanonicalHostRedirect,
-  resolveCrossDomainRedirect,
-} from "@/lib/routing/host-routing";
+import { resolveCanonicalHostRedirect } from "@/lib/routing/host-routing";
 import { updateSession } from "@/lib/supabase/middleware";
 
 export async function proxy(request: NextRequest) {
   const canonical = resolveCanonicalHostRedirect(request);
   if (canonical) {
     return canonical;
-  }
-
-  const crossDomain = resolveCrossDomainRedirect(request);
-  if (crossDomain) {
-    return crossDomain;
   }
 
   return updateSession(request);

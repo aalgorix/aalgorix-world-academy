@@ -19,11 +19,23 @@ import {
   fetchCompletedLessonsByEnrollment,
   fetchLessonTotalsByCourse,
 } from "@/lib/dashboard/course-progress";
+import { fetchLearningActivity } from "@/lib/dashboard/learning-activity";
 import { unwrapOne } from "@/lib/dashboard/relations";
 import {
   isSubmissionStatus,
   type SubmissionStatus,
 } from "@/lib/dashboard/submission-status";
+import {
+  buildLast30WeekdayAttendance,
+  buildQuizScoreTrend,
+  buildSubjectStatsForCharts,
+  buildWeeklyHoursFromActivity,
+  computeActivityStreak,
+  computeMonthAttendancePercent,
+  computeWeeklyLessonGoal,
+  fetchNotificationPreviews,
+  fetchTodayScheduleItems,
+} from "@/lib/student/queries";
 import { fetchFirstLessonIdForCourse } from "@/lib/student/workspace";
 import { createClient } from "@/lib/supabase/server";
 
@@ -192,9 +204,13 @@ export default async function StudentHomePage() {
   const enrollmentIds = enrollments.map((r) => r.enrollmentId);
   const courseIds = enrollments.map((r) => r.course.id);
 
-  const [lessonTotals, completedByEnrollment] = await Promise.all([
+  const [lessonTotals, completedByEnrollment, learningActivity, todaySchedule, notificationPreviews] =
+    await Promise.all([
     fetchLessonTotalsByCourse(supabase, courseIds),
     fetchCompletedLessonsByEnrollment(supabase, enrollmentIds),
+    fetchLearningActivity(user.id),
+    fetchTodayScheduleItems(user.id),
+    fetchNotificationPreviews(user.id),
   ]);
 
   const coursesWithMeta = await Promise.all(
@@ -317,11 +333,34 @@ export default async function StudentHomePage() {
   const gradeLabel =
     enrollments[0]?.course.grade_level ?? "Student";
   const yearLabel = "2025–2026";
-  const streakDays = 24; // TODO: wire to real streak table
-  const goalDone = 5;
-  const goalTotal = 7;
+  const streakDays = computeActivityStreak(learningActivity);
+  const weeklyGoal = computeWeeklyLessonGoal(learningActivity);
+  const attendancePercent = computeMonthAttendancePercent(learningActivity);
+  const attendanceMiniDays = buildLast30WeekdayAttendance(learningActivity);
   const motivation =
-    "You're on a roll — 3 lessons left to hit this week's goal. Small steps, big results. 🚀";
+    weeklyGoal.done >= weeklyGoal.total
+      ? "You've hit this week's lesson goal — brilliant consistency! 🚀"
+      : `${weeklyGoal.total - weeklyGoal.done} more lesson${weeklyGoal.total - weeklyGoal.done !== 1 ? "s" : ""} to reach your weekly goal.`;
+
+  const subjectGradeRows = ((feedbackSubmissionRows ?? []) as RawFeedbackRow[])
+    .filter((r) => r.status === "graded" && r.grade != null)
+    .map((r) => {
+      const assignment = unwrapOne(r.assignments);
+      const course = unwrapOne(assignment?.courses ?? null);
+      return {
+        courseTitle: course?.title ?? "Course",
+        grade: r.grade as number,
+      };
+    });
+
+  const subjectStats = buildSubjectStatsForCharts(subjectGradeRows);
+  const weeklyHours = buildWeeklyHoursFromActivity(learningActivity);
+  const quizScoreTrend = buildQuizScoreTrend(
+    ((feedbackSubmissionRows ?? []) as RawFeedbackRow[])
+      .filter((r) => r.status === "graded" && r.grade != null)
+      .sort((a, b) => feedbackSortTimestamp(a) - feedbackSortTimestamp(b))
+      .map((r) => r.grade as number),
+  );
 
   // ------------------------------------------------------------------
   // Stat cards config
@@ -332,7 +371,6 @@ export default async function StudentHomePage() {
       percent: averageCourseProgress,
       ringColor: "#6366F1",
       label: "Overall progress",
-      trend: "+6%",
     },
     {
       kind: "icon",
@@ -340,7 +378,6 @@ export default async function StudentHomePage() {
       icon: <BookOpen className="w-[23px] h-[23px]" style={{ color: "#10B981" }} />,
       iconBg: "#E7F8F1",
       label: "Courses completed",
-      trend: "+2",
     },
     {
       kind: "icon",
@@ -362,21 +399,18 @@ export default async function StudentHomePage() {
       ),
       iconBg: "#F3EEFE",
       label: "Lessons completed",
-      trend: "+5",
     },
     {
       kind: "ring",
-      percent: 96,
+      percent: attendancePercent,
       ringColor: "#F59E0B",
       label: "Attendance rate",
-      trend: "+1%",
     },
     {
       kind: "ring",
       percent: gpaAverage ?? 0,
       ringColor: "#F43F5E",
       label: "Average score",
-      trend: "+4%",
     },
   ];
 
@@ -417,8 +451,8 @@ export default async function StudentHomePage() {
           gradeLabel={gradeLabel}
           yearLabel={yearLabel}
           streakDays={streakDays}
-          goalDone={goalDone}
-          goalTotal={goalTotal}
+          goalDone={weeklyGoal.done}
+          goalTotal={weeklyGoal.total}
           todayLabel={todayLabel}
           motivation={motivation}
         />
@@ -441,13 +475,17 @@ export default async function StudentHomePage() {
             style={{ flexBasis: "540px" }}
           >
             {/* 3a: Today's schedule */}
-            <TodaysSchedule />
+            <TodaysSchedule sessions={todaySchedule} />
 
             {/* 3b: Continue learning */}
             <ContinueLearning courses={continueCourses} />
 
             {/* 3c: Performance analytics */}
-            <PerformanceCharts />
+            <PerformanceCharts
+              weeklyHours={weeklyHours}
+              quizScores={quizScoreTrend.length >= 2 ? quizScoreTrend : undefined}
+              subjectStats={subjectStats.length > 0 ? subjectStats : undefined}
+            />
           </div>
 
           {/* RIGHT COLUMN */}
@@ -462,10 +500,12 @@ export default async function StudentHomePage() {
             <PendingSubmissionsCard items={pendingItems} />
 
             {/* 4c: Notifications */}
-            <NotificationsCard />
+            <NotificationsCard items={notificationPreviews} />
 
-            {/* 4c: Attendance mini */}
-            <AttendanceMiniCard />
+            <AttendanceMiniCard
+              attendancePercent={attendancePercent}
+              days={attendanceMiniDays}
+            />
           </div>
         </div>
 

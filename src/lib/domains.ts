@@ -3,7 +3,7 @@ import {
   isDashboardPath,
 } from "@/lib/auth/redirects";
 
-/** Public marketing routes (served on the marketing origin in dual-domain mode). */
+/** Public marketing routes (same origin as auth/dashboard in single-domain mode). */
 const MARKETING_PREFIXES = ["/courses", "/contact", "/faq", "/our-story", "/blog"] as const;
 
 function stripTrailingSlash(url: string): string {
@@ -12,53 +12,28 @@ function stripTrailingSlash(url: string): string {
 
 /**
  * Prefer server-only env (runtime on deploy) over NEXT_PUBLIC_* (inlined at build).
- * Do not use appUrl()/marketingUrl() in client components — use relative paths
- * like /login and let the proxy redirect using these origins.
+ * Use relative paths in client components; server code uses siteUrl() when an absolute URL is needed.
  */
-function readSiteOrigin(
-  serverKey: "MARKETING_SITE_URL" | "APP_SITE_URL",
-  publicKey: "NEXT_PUBLIC_MARKETING_URL" | "NEXT_PUBLIC_APP_URL",
-  fallback: string,
-): string {
-  const server = process.env[serverKey]?.trim();
+function readSiteOrigin(): string {
+  const server = process.env.MARKETING_SITE_URL?.trim();
   if (server) {
     return stripTrailingSlash(server);
   }
-  const fromPublic = process.env[publicKey]?.trim();
+  const fromPublic = process.env.NEXT_PUBLIC_MARKETING_URL?.trim();
   if (fromPublic) {
     return stripTrailingSlash(fromPublic);
   }
-  return fallback;
+  return "http://localhost:3000";
 }
 
-/** Canonical marketing site origin (www.aalgorixworldacademy.com in production). */
+/** Canonical site origin (www.aalgorixworldacademy.com in production). */
 export function getMarketingOrigin(): string {
-  return readSiteOrigin(
-    "MARKETING_SITE_URL",
-    "NEXT_PUBLIC_MARKETING_URL",
-    "http://localhost:3000",
-  );
+  return readSiteOrigin();
 }
 
-/**
- * Authenticated app origin (app.aalgorixworldacademy.com in production).
- * Falls back to marketing origin when unset (local monolith dev).
- */
+/** Alias for getMarketingOrigin — marketing and LMS share one host. */
 export function getAppOrigin(): string {
-  const app = readSiteOrigin(
-    "APP_SITE_URL",
-    "NEXT_PUBLIC_APP_URL",
-    "",
-  );
-  if (app) {
-    return app;
-  }
   return getMarketingOrigin();
-}
-
-/** True when marketing and app origins differ (production dual-domain). */
-export function isDualDomainMode(): boolean {
-  return getMarketingOrigin() !== getAppOrigin();
 }
 
 export function normalizeHost(hostHeader: string): string {
@@ -101,20 +76,6 @@ export function getRequestHost(request: { headers: Headers }): string {
   );
 }
 
-export function isMarketingHost(hostHeader: string): boolean {
-  if (!isDualDomainMode()) {
-    return true;
-  }
-  return hostsMatchConfiguredOrigin(hostHeader, getMarketingOrigin());
-}
-
-export function isAppHost(hostHeader: string): boolean {
-  if (!isDualDomainMode()) {
-    return false;
-  }
-  return hostsMatchConfiguredOrigin(hostHeader, getAppOrigin());
-}
-
 export function isMarketingPath(pathname: string): boolean {
   if (pathname === "/") {
     return false;
@@ -128,7 +89,7 @@ export function isAppPath(pathname: string): boolean {
   return isAuthPath(pathname) || isDashboardPath(pathname);
 }
 
-export function marketingUrl(path = ""): string {
+export function siteUrl(path = ""): string {
   const origin = getMarketingOrigin();
   if (!path) {
     return origin;
@@ -136,17 +97,17 @@ export function marketingUrl(path = ""): string {
   return `${origin}${path.startsWith("/") ? path : `/${path}`}`;
 }
 
+export function marketingUrl(path = ""): string {
+  return siteUrl(path);
+}
+
 export function appUrl(path = ""): string {
-  const origin = getAppOrigin();
-  if (!path) {
-    return origin;
-  }
-  return `${origin}${path.startsWith("/") ? path : `/${path}`}`;
+  return siteUrl(path);
 }
 
 /**
  * Shared parent domain for Supabase auth cookies (e.g. `.aalgorixworldacademy.com`).
- * Set AUTH_COOKIE_DOMAIN in production so sessions work across subdomains.
+ * Set AUTH_COOKIE_DOMAIN in production so sessions work on www and apex.
  */
 export function getAuthCookieDomain(): string | undefined {
   const domain = process.env.AUTH_COOKIE_DOMAIN?.trim();

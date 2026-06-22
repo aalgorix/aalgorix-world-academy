@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import {
   computeProgressPercent,
   fetchCompletedLessonsByEnrollment,
@@ -283,32 +282,37 @@ export default async function ParentReportCardPage({ params }: PageProps) {
     gradedAssessments.map((row) => row.grade),
   );
   const gradeClassificationTrack = resolveGradeTrack(courses);
-  const parentDisplayName = parentProfile.full_name?.trim() || "Parent";
 
   return (
     <>
-      <div className="print:hidden">
-        <DashboardShell
-          eyebrow="Official scholastic records"
-          title="Academic transcript & report card"
-          subtitle={`Institutional certificate review for ${learnerName}. Export a print-ready PDF for your records.`}
-        >
-          <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
-            <Link
-              href={`/parent?child=${childId}`}
-              className="inline-flex items-center gap-2 text-sm font-semibold text-indigo-600 transition-colors hover:text-indigo-800"
-            >
-              <span aria-hidden>←</span>
-              Back to {parentDisplayName}&apos;s dashboard
-            </Link>
-            <PrintTranscriptButton />
-          </div>
-
-          <p className="mb-6 text-sm text-slate-600">
-            The transcript below mirrors the official document that will print. Use
-            the button above to open your browser&apos;s print dialog and save as PDF.
+      <div className="print:hidden mx-auto w-full" style={{ maxWidth: 1320, padding: "28px 32px 40px" }}>
+        <div className="mb-6">
+          <p className="text-[12px] font-bold uppercase tracking-widest text-amber-600">
+            Official scholastic records
           </p>
-        </DashboardShell>
+          <h1 className="mt-1 text-[28px] font-extrabold tracking-tight text-stone-900">
+            Academic transcript & report card
+          </h1>
+          <p className="mt-1 text-[14px] font-medium text-stone-500">
+            Institutional certificate review for {learnerName}. Export a print-ready PDF for your records.
+          </p>
+        </div>
+
+        <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
+          <Link
+            href={`/parent?child=${childId}`}
+            className="inline-flex items-center gap-2 text-sm font-semibold text-amber-700 transition-colors hover:text-amber-900"
+          >
+            <span aria-hidden>←</span>
+            Back to dashboard
+          </Link>
+          <PrintTranscriptButton />
+        </div>
+
+        <p className="mb-6 text-sm text-stone-600">
+          The transcript below mirrors the official document that will print. Use the button above to
+          open your browser&apos;s print dialog and save as PDF.
+        </p>
       </div>
 
       <div className="mx-auto max-w-5xl px-4 pb-16 sm:px-6 lg:px-8 print:mx-0 print:max-w-none print:px-0 print:pb-0">

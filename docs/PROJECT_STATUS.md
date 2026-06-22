@@ -1,8 +1,8 @@
 # Aalgorix World Academy — Engineering Source of Truth
 
 **Repository:** `aalgorix-world-academy`  
-**Document version:** 2.2  
-**Last updated:** June 18, 2026  
+**Document version:** 2.5  
+**Last updated:** June 22, 2026  
 **Status:** Phase 0–8 substantially complete · Full Student Dashboard Suite live (12 pages) · Full Teacher Dashboard Suite live (9 pages) · Marketing Landing Page Live · Admin/Parent portals functional · **No payment integration — enrollment is admin-managed** · Zero tests
 
 ---
@@ -39,7 +39,8 @@ Configuration is driven by `.env.local` (see `.env.local.example`):
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` (or `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`)
 - `SUPABASE_SERVICE_ROLE_KEY` (server-only; parent link code redemption)
-- `NEXT_PUBLIC_APP_URL`
+- `MARKETING_SITE_URL` / `NEXT_PUBLIC_MARKETING_URL`
+- `AUTH_COOKIE_DOMAIN` (production; optional locally)
 
 ### 1.4 Engineering attributions (presentation layer)
 
@@ -187,8 +188,9 @@ Full Admin course management and Teacher grading portals are implemented.
 | **Admin: Publish/unpublish** | ✅ Complete | `toggleCoursePublished` server action |
 | **Admin: Teacher assignment** | ✅ Complete | `admin/staffing/` — `staffing-panel.tsx`, `assign-course-modal.tsx` |
 | **Teacher: Grading station** | ✅ Complete | `teacher/grading/` — `grading-station.tsx`, grade + feedback + return flow |
-| **Parent: Child linking** | ⚠️ Partial | UI complete; missing `parent_link_codes` DB migration |
-| **Parent: Progress monitoring** | ✅ Complete | `parent/page.tsx`, `course-progress-panel.tsx`, `grading-timeline.tsx` |
+| **Parent: Child linking** | ✅ Complete | Link code redemption + unlink; requires `parent_link_codes` migration deployed |
+| **Parent: Dashboard suite** | ✅ Complete | ParentShell; dashboard, assignments, activity, teachers, fees, settings, report card |
+| **Parent: Progress monitoring** | ✅ Complete | `parent/page.tsx`, shared `lib/parent/queries.ts` |
 | **Parent: Report card** | ✅ Complete | `parent/report-card/[childId]/page.tsx` |
 
 ---
@@ -227,8 +229,8 @@ Server component that authenticates the user, verifies `teacher` (or `admin`) ro
 | `/teacher/grading` | RSC + Client | Real | Full grading station — existing feature, now wrapped in teacher shell |
 | `/teacher/courses` | RSC | Real | Course cards with enrollment count, pending submission count, publish status, grade-action link |
 | `/teacher/students` | RSC | Real | All enrolled students across assigned courses; per-course chip filters, avatars, enrolment info |
-| `/teacher/schedule` | Client | Mock | Interactive monthly calendar, selected-day event panel, upcoming events sidebar |
-| `/teacher/messages` | Client | Mock | Two-panel chat (contacts + thread), quick reply suggestions, typing indicator |
+| `/teacher/schedule` | RSC + client | **Real** | Assignment deadlines + live sessions for assigned courses |
+| `/teacher/messages` | RSC + client | **Real** | Course-scoped messaging with enrolled students |
 | `/teacher/reports` | RSC | Real | Grade distribution bar chart, per-course avg % and pending count from real submission data |
 | `/teacher/profile` | RSC | Real | Profile card with avatar, email, courses assigned, teaching responsibilities grid |
 | `/teacher/settings` | Client | Local state | Theme toggle, language picker, notification toggles, security, privacy |
@@ -243,22 +245,22 @@ The entire student-facing dashboard has been designed, implemented and wired. Al
 Responsive sidebar layout (full on desktop, icon-only on tablet, drawer on mobile) with 12 nav items and a mobile bottom tab bar.
 
 #### Dashboard Home (`student/page.tsx`)
-Rich interactive home page: `HeroBanner`, stat rings, today's schedule, continue-learning course cards, performance charts, AI tutor card, pending submissions, notifications, attendance mini-heatmap, and badges. Uses real Supabase data for enrollments, progress, and submissions; mock data for streak/schedule/notifications.
+Rich interactive home page: real streak (activity-derived), weekly lesson goal, attendance ring, today's schedule, notification previews, performance charts from graded submissions; badges section still mock.
 
 #### All Student Pages
 
 | Route | Type | Data | Key Features |
 |-------|------|------|-------------|
 | `/student/courses` | RSC | Real | Progress bars, In Progress / Completed sections |
-| `/student/live` | Client | Mock | Live hero banner, week-at-a-glance, Today/Week/Recordings tabs |
+| `/student/live` | RSC + client | **Real** | `live_class_sessions` — join links when published |
 | `/student/assignments` | RSC + Client | Real | `AssignmentsList` — tabbed by All/Todo/Submitted/Graded/Needs Revision |
-| `/student/assessments` | Client | Mock | Upcoming/Results/Performance tabs with animated score bars |
-| `/student/attendance` | Client | Mock | Monthly calendar heatmap, ring chart (%), breakdown stat cards |
+| `/student/assessments` | RSC + client | **Real** | Published assignments + graded submissions |
+| `/student/attendance` | RSC + client | **Real (derived)** | Weekday activity from lesson completions + submissions |
 | `/student/tutor` | Client | Simulated | Full chat UI, typing indicator, quick chips, voice toggle |
 | `/student/certificates` | Client | Mock | Badges (earned/locked grid) + Certificates (download + share); Scholar progress bar |
 | `/student/reports` | RSC | Real + mock charts | Per-course progress bars, avg grade, `PerformanceCharts` with real subject data |
-| `/student/messages` | Client | Mock | Two-panel (contacts + thread), send messages, unread badges |
-| `/student/calendar` | Client | Mock | Monthly grid, event dots, click-to-view events, upcoming sidebar |
+| `/student/messages` | RSC + client | **Real** | Teachers from enrolled courses; persisted chat threads |
+| `/student/calendar` | RSC + client | **Real** | Assignment due dates + live sessions from enrolled courses |
 | `/student/notifications` | RSC | Real | Pending + submitted submissions |
 | `/student/settings` | Client | Local state | Theme toggle, language picker, notification toggles, security, privacy |
 
@@ -479,10 +481,10 @@ Phases are ordered for **vertical slice delivery**. **Stripe billing is intentio
 | **3** | Course Catalog & Storage | ✅ **Complete** | Admin course CRUD, TUS video upload, worksheet upload, teacher assignment, publish/unpublish |
 | **4** | Student LMS Workspace | ✅ **Complete** | Lesson workspace, video player, homework submission, content unlock engine, lesson progress |
 | **5** | Teacher Portal & Grading Queue | ✅ **Complete** | Grading station, file download, grade 0–100, return for revision |
-| **6** | Parent Performance Dashboard | ✅ **Complete** (partial) | Progress monitoring, report card, child linking (link code redemption UI; missing DB migration) |
+| **6** | Parent Performance Dashboard | ✅ **Complete** | ParentShell + 7 routes; progress, assignments, activity, teachers, fees, settings, report card |
 | **7** | Full Student Dashboard Suite | ✅ **Complete** | All 12 student routes: dashboard, courses, live, assignments, assessments, attendance, AI tutor, certificates, reports, messages, calendar, settings |
 | **8** | Full Teacher Dashboard Suite | ✅ **Complete** | All 9 teacher routes: dashboard, grading, courses, students, schedule, messages, reports, profile, settings |
-| **9** | Real Data Wiring | 🔜 Next | Replace mock data in teacher schedule/messages, student attendance, calendar, live, assessments |
+| **9** | Real Data Wiring | 🔶 In progress | Calendar, attendance, assessments, live, schedule, messages, dashboard widgets wired; certificates/badges + AI tutor still mock |
 | **Next** | Admin polish | 🔶 In progress | Course edit, enrollment lifecycle, user edit, platform settings (`platform_settings` migration) |
 
 ### 5.1 Phase dependency graph (logical)
@@ -515,7 +517,8 @@ The following remain to be completed before MVP readiness:
 4. **Test suite** — Vitest unit tests + Playwright E2E (1 week)
 5. **Error monitoring** — Sentry or Vercel Error Tracking (4h)
 6. **Security headers** in `next.config.ts` (2h)
-7. **Real DB tables** for attendance, messages, calendar events, live class sessions
+7. **Real DB tables** for messages, tutor conversations; dashboard home widgets (streak, notifications card, today's schedule)
+8. **Apply `live_class_sessions` migration** — `supabase/migrations/20250622000000_live_class_sessions.sql`
 
 ### 5.3 Explicitly out of scope (longer term)
 

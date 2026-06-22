@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { useActionState, useState } from "react";
 
+import { loginWithPassword, type LoginActionState } from "@/app/(auth)/login/actions";
 import { AuthShell } from "@/components/auth/auth-shell";
 import {
   authInputClassName,
@@ -11,81 +12,51 @@ import {
   authSecondaryButtonClassName,
 } from "@/components/auth/auth-field-classes";
 import { GoogleIcon } from "@/components/auth/google-icon";
-import { getDashboardPathForRole } from "@/lib/auth/redirects";
-import { isUserRole } from "@/lib/auth/roles";
 import { createClient } from "@/lib/supabase/client";
 
+const initialState: LoginActionState = {};
+
 export function LoginForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const next = searchParams.get("next");
   const urlError = searchParams.get("error");
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(
-    urlError ? decodeURIComponent(urlError) : null,
+  const [state, formAction, isPending] = useActionState(
+    loginWithPassword,
+    initialState,
   );
-  const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [googleError, setGoogleError] = useState<string | null>(null);
+
+  const error =
+    state.error ??
+    googleError ??
+    (urlError ? decodeURIComponent(urlError) : null);
 
   async function handleGoogleSignIn() {
-    setError(null);
+    setGoogleError(null);
     setGoogleLoading(true);
 
     const supabase = createClient();
+    const redirectTo = new URL("/auth/callback", window.location.origin);
+    if (next) {
+      redirectTo.searchParams.set("next", next);
+    }
+
     const { error: oauthError } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: redirectTo.toString(),
       },
     });
 
     if (oauthError) {
-      setError(oauthError.message);
+      setGoogleError(oauthError.message);
       setGoogleLoading(false);
     }
   }
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError(null);
-    setLoading(true);
-
-    const supabase = createClient();
-    const { data, error: signInError } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
-      password,
-    });
-
-    if (signInError) {
-      setError(signInError.message);
-      setLoading(false);
-      return;
-    }
-
-    if (data.user) {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", data.user.id)
-        .maybeSingle();
-
-      const destination =
-        next ??
-        (profile?.role && isUserRole(profile.role)
-          ? getDashboardPathForRole(profile.role)
-          : "/");
-
-      router.push(destination);
-      router.refresh();
-      return;
-    }
-
-    setLoading(false);
-  }
-
-  const isBusy = loading || googleLoading;
+  const isBusy = isPending || googleLoading;
 
   return (
     <AuthShell
@@ -134,7 +105,9 @@ export function LoginForm() {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form action={formAction} className="space-y-5">
+          {next ? <input type="hidden" name="next" value={next} /> : null}
+
           <div className="space-y-2">
             <label
               htmlFor="email"
@@ -148,8 +121,6 @@ export function LoginForm() {
               type="email"
               autoComplete="email"
               required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
               className={authInputClassName}
               placeholder="you@example.com"
             />
@@ -176,8 +147,6 @@ export function LoginForm() {
               type="password"
               autoComplete="current-password"
               required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
               className={authInputClassName}
               placeholder="••••••••"
             />
@@ -188,7 +157,7 @@ export function LoginForm() {
             disabled={isBusy}
             className={authPrimaryButtonClassName}
           >
-            {loading ? "Signing in…" : "Sign in"}
+            {isPending ? "Signing in…" : "Sign in"}
           </button>
         </form>
       </div>

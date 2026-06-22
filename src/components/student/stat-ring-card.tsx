@@ -7,7 +7,7 @@ type RingStatCardProps = {
   percent: number;
   ringColor: string;
   label: string;
-  trend: string;
+  trend?: string;
 };
 
 type IconStatCardProps = {
@@ -16,7 +16,7 @@ type IconStatCardProps = {
   icon: ReactNode;
   iconBg: string;
   label: string;
-  trend: string;
+  trend?: string;
 };
 
 export type StatRingCardProps = RingStatCardProps | IconStatCardProps;
@@ -63,11 +63,14 @@ export function StatRingCard(props: StatRingCardProps) {
           </div>
         )}
 
-        {/* trend badge */}
-        <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-[#E9F9F1] text-[#0E9F6E] text-[11.5px] font-bold">
-          <TrendingUp className="w-3 h-3" />
-          {props.trend}
-        </div>
+        {props.trend ? (
+          <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-[#E9F9F1] text-[#0E9F6E] text-[11.5px] font-bold">
+            <TrendingUp className="w-3 h-3" />
+            {props.trend}
+          </div>
+        ) : (
+          <span />
+        )}
       </div>
 
       <div>

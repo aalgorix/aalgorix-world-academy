@@ -26,6 +26,26 @@ export type UnlinkStudentResult = {
   error?: string;
 };
 
+export type UpdateProfileResult = {
+  ok: boolean;
+  error?: string;
+};
+
+const PARENT_PATHS = [
+  PARENT_SETTINGS_PATH,
+  PARENT_HOME_PATH,
+  "/parent/assignments",
+  "/parent/attendance",
+  "/parent/messages",
+  "/parent/fees",
+] as const;
+
+function revalidateParentPaths() {
+  for (const path of PARENT_PATHS) {
+    revalidatePath(path);
+  }
+}
+
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -158,8 +178,7 @@ export async function connectChildWithLinkCode(
     .eq("id", linkRow.student_id)
     .maybeSingle();
 
-  revalidatePath(PARENT_SETTINGS_PATH);
-  revalidatePath(PARENT_HOME_PATH);
+  revalidateParentPaths();
 
   const studentName =
     studentProfile?.full_name?.trim() || studentProfile?.email || "your student";
@@ -210,8 +229,38 @@ export async function unlinkStudent(studentId: string): Promise<UnlinkStudentRes
     return { ok: false, error: deleteError.message };
   }
 
-  revalidatePath(PARENT_SETTINGS_PATH);
-  revalidatePath(PARENT_HOME_PATH);
+  revalidateParentPaths();
 
+  return { ok: true };
+}
+
+export async function updateParentProfileAction(
+  formData: FormData,
+): Promise<UpdateProfileResult> {
+  const ctx = await requireParent();
+  if (ctx.error || !ctx.supabase || !ctx.userId) {
+    return { ok: false, error: ctx.error ?? "Unauthorized." };
+  }
+
+  const fullName = (formData.get("full_name") as string | null)?.trim() ?? "";
+  const phone = (formData.get("phone") as string | null)?.trim() ?? "";
+
+  if (!fullName) {
+    return { ok: false, error: "Full name is required." };
+  }
+
+  const { error } = await ctx.supabase
+    .from("profiles")
+    .update({
+      full_name: fullName,
+      phone: phone || null,
+    })
+    .eq("id", ctx.userId);
+
+  if (error) {
+    return { ok: false, error: error.message };
+  }
+
+  revalidateParentPaths();
   return { ok: true };
 }

@@ -1,7 +1,7 @@
 # Aalgorix World Academy — Enterprise-Grade Master Documentation
 
 > **Document Type:** CTO Audit · Architecture Review · Product Analysis · Knowledge Transfer Guide  
-> **Generated:** June 17, 2026 · **Last Updated:** June 18, 2026  
+> **Generated:** June 17, 2026 · **Last Updated:** June 22, 2026  
 > **Codebase Revision:** Phase 0–3+ (Phases 0–1b complete + significant Phase 3–7 work implemented; full Student dashboard suite complete)  
 > **Audience:** Developer · Architect · CTO · Investor · PM · QA · DevOps · Designer · Stakeholder  
 
@@ -119,7 +119,7 @@ Overall Completion: 72%
 | **Admin Course Management** | 80% | 🔶 Partial | HIGH | CRUD works; no drag-reorder, no bulk publish |
 | **Admin Staffing** | 75% | 🔶 Partial | MEDIUM | Teacher assignment works; no user provisioning UI |
 | **Teacher Grading** | 80% | 🔶 Partial | HIGH | Grade/return works; no grade history view |
-| **Parent Dashboard** | 75% | 🔶 Partial | MEDIUM | Progress + report card work; link code flow needs migration fix |
+| **Parent Dashboard** | 90% | ✅ Solid | MEDIUM | ParentShell + 7 routes; real data; fees placeholder until Stripe |
 | **AI Voice Assistant** | 90% | ✅ Marketing | MEDIUM | Marketing page live; in-LMS chat UI built (simulated responses) |
 | **Blog / CMS** | 85% | ✅ Functional | LOW | Contentful integration complete; graceful degradation when unconfigured |
 | **Enrollment Management UI** | 75% | 🔶 Partial | HIGH | Enroll, status updates, filters; content unlock seeding on enroll |
@@ -448,7 +448,7 @@ aalgorix-world-academy/
 │   │
 │   └── lib/
 │       ├── env.ts                   # Supabase credential validators
-│       ├── domains.ts               # Dual-domain routing + cookie domain helpers
+│       ├── domains.ts               # Site origin + cookie domain helpers
 │       ├── app-auth-href.ts         # Auth link builder
 │       ├── auth/
 │       │   ├── roles.ts             # UserRole enum + type guards
@@ -523,7 +523,7 @@ aalgorix-world-academy/
 | **Why Created** | Next.js 16 supersedes `middleware.ts` with the proxy convention; this file is the canonical replacement |
 | **Business Problem** | Unauthenticated users must not reach dashboard routes; authenticated users must not access wrong-role sections |
 | **Technical Problem** | Supabase JWT cookies must be refreshed on every navigation to prevent stale-session logouts |
-| **Logic Flow** | `resolveCanonicalHostRedirect` → `resolveCrossDomainRedirect` → `updateSession` |
+| **Logic Flow** | `resolveCanonicalHostRedirect` → `updateSession` |
 | **Input** | Every HTTP request matching the regex in `config.matcher` (all routes except static assets) |
 | **Output** | `NextResponse.next()` (pass through) or `NextResponse.redirect(...)` |
 | **Impact if Removed** | **Critical** — all authenticated routes become publicly accessible; sessions go stale; role enforcement breaks |
@@ -669,7 +669,7 @@ graph TB
 - **Route groups** (`(marketing)`, `(auth)`, `(dashboard)`) cleanly separate URL-space concerns without cluttering the URL.
 - **Server Actions** for all mutations eliminate the need for intermediate API routes, reducing boilerplate significantly.
 - **Supabase SSR cookie bridge** correctly handles both browser and server runtimes without session staleness.
-- **Dual-domain architecture** in `src/lib/domains.ts` allows `www.aalgorixworldacademy.com` (marketing) and `app.aalgorixworldacademy.com` (LMS) to share auth cookies with a configurable domain prefix.
+- **Single-domain deployment** in `src/lib/domains.ts`: marketing, login, and dashboards share `www.aalgorixworldacademy.com`. Auth cookies use `AUTH_COOKIE_DOMAIN=.aalgorixworldacademy.com` for www + apex.
 
 ### 8.5 Architectural Weaknesses
 
@@ -715,17 +715,17 @@ graph TB
 | Parent: Progress monitoring | ✅ | | | — |
 | Parent: Report card | ✅ | | | — |
 | Parent: Unlink child | ✅ | | | — |
-| Dual-domain routing | ✅ | | | — |
+| Single-domain routing | ✅ | | | — |
 | Content unlock engine (4 strategies) | ✅ | | | — |
 | Signed URL generation (video/worksheet) | ✅ | | | — |
 | Student: Streak tracking | | ✅ | | HIGH — UI present, DB backing TODO |
-| Student: Attendance tracking | ✅ | | | Calendar + stats UI (mock data; DB table TODO) |
+| Student: Attendance tracking | ✅ | | | Derived from `lesson_progress` + `submissions` |
 | Student: Certificates | ✅ | | | Badges + certificates UI (mock data) |
 | Student: AI Tutor (in-LMS) | ✅ | | | Chat UI with simulated responses; real LLM TODO |
-| Student: Live classes | ✅ | | | Sessions UI (mock data; Jitsi/Daily integration TODO) |
-| Student: Assessments/Quizzes | ✅ | | | Tabbed UI (mock data; quiz engine TODO) |
-| Student: Messages | ✅ | | | Two-panel chat UI (mock data; DB backing TODO) |
-| Student: Calendar | ✅ | | | Monthly calendar + event detail (mock data) |
+| Student: Live classes | ✅ | | | `live_class_sessions` + real student live page |
+| Student: Assessments/Quizzes | ✅ | | | Published assignments + submissions (quiz engine TODO) |
+| Student: Messages | ✅ | | | `conversations` + `messages` tables; student/teacher chat UI |
+| Student: Calendar | ✅ | | | Assignment due dates + live sessions |
 | Student: Progress Reports | ✅ | | | Real Supabase data + PerformanceCharts |
 | Student: Settings | ✅ | | | Theme / notifications / privacy / security prefs |
 | Admin: User provisioning UI | | | ✅ | HIGH |
@@ -1232,9 +1232,9 @@ HMAC-SHA256 link code system:
 
 #### `src/lib/domains.ts`
 
-Handles the dual-domain production topology:
-- `getMarketingOrigin()` / `getAppOrigin()`: Read from `MARKETING_SITE_URL`/`APP_SITE_URL` (prefer) or `NEXT_PUBLIC_MARKETING_URL`/`NEXT_PUBLIC_APP_URL`
-- `isDualDomainMode()`: Returns true when origins differ
+Handles the production site origin:
+- `getMarketingOrigin()` / `siteUrl()`: Read from `MARKETING_SITE_URL` (prefer) or `NEXT_PUBLIC_MARKETING_URL`
+- `getAppOrigin()` / `appUrl()`: Alias of marketing origin (single host)
 - `withAuthCookieDomain()`: Patches Supabase auth cookie options with `AUTH_COOKIE_DOMAIN` so cookies work across subdomains
 
 #### `src/lib/contentful/`
@@ -1279,7 +1279,7 @@ This pattern means even if the proxy gate is bypassed (impossible in production,
 
 | Aspect | Status | Assessment |
 |--------|--------|------------|
-| **Integration** | Production | `@11labs/react` SDK with `useConversation` hook |
+| **Integration** | Production | `@elevenlabs/react` SDK with `ConversationProvider` + `useConversation` |
 | **Deployment** | Marketing `/ai-voice-assistant` page | Available to all visitors; not gated by auth |
 | **Architecture** | Client-side WebSocket connection | ElevenLabs manages the AI model; no backend involvement |
 | **State Management** | 6-state FSM (`idle`, `connecting`, `listening`, `speaking`, `ending`, `error`) | Clean, correct |
@@ -1317,7 +1317,7 @@ This prevents students from accessing AI tutor without enrollment and ensures th
 - All authentication routing breaks
 - Session refresh stops working → users get randomly logged out
 - Role-prefix enforcement breaks → horizontal privilege movement possible
-- Dual-domain routing breaks
+- Canonical host redirect (apex → www) breaks
 
 ### 16.2 If `supabase/migrations/foundation.sql` changes (schema alteration)
 
@@ -1548,8 +1548,7 @@ graph LR
     VercelCI -->|npm run build| NextBuild[Next.js 16 Turbopack Build]
     NextBuild -->|Deploy| VercelEdge[Vercel Edge Network]
     
-    VercelEdge --> WWW[www.aalgorixworldacademy.com<br/>Marketing]
-    VercelEdge --> APP[app.aalgorixworldacademy.com<br/>LMS Dashboard]
+    VercelEdge --> WWW[www.aalgorixworldacademy.com<br/>Marketing + LMS]
     
     WWW --> SupabaseDB[(Supabase PostgreSQL)]
     APP --> SupabaseDB
@@ -1565,9 +1564,8 @@ graph LR
 | `NEXT_PUBLIC_SUPABASE_URL` | All | Required — throws on missing |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` or `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | All | Required |
 | `SUPABASE_SERVICE_ROLE_KEY` | Parent link code redemption | Server-only, never exposed |
-| `NEXT_PUBLIC_APP_URL` | Dual-domain mode | Falls back to marketing URL in dev |
-| `MARKETING_SITE_URL` | Dual-domain (prod) | Prefer over `NEXT_PUBLIC_MARKETING_URL` |
-| `APP_SITE_URL` | Dual-domain (prod) | Prefer over `NEXT_PUBLIC_APP_URL` |
+| `MARKETING_SITE_URL` | Production canonical origin | Prefer over `NEXT_PUBLIC_MARKETING_URL` |
+| `NEXT_PUBLIC_MARKETING_URL` | Client-visible site URL | Build-time fallback |
 | `AUTH_COOKIE_DOMAIN` | Cross-subdomain auth | e.g. `.aalgorixworldacademy.com` |
 | `SMTP_HOST` | Email features | |
 | `SMTP_PORT` | Email features | |
@@ -1892,7 +1890,7 @@ Marketing gateway is live and polished. All four LMS actor dashboards are functi
 
 #### Hour 4: Infrastructure Layer
 
-13. **`src/lib/domains.ts`** — Dual-domain routing logic.
+13. **`src/lib/domains.ts`** — Site origin and cookie domain helpers.
 14. **`src/lib/routing/host-routing.ts`** — Cross-domain redirect resolution.
 15. **`src/lib/supabase/middleware.ts`** — The full `updateSession()` implementation.
 
@@ -1925,8 +1923,7 @@ cp .env.local.example .env.local
 
 # 4. Run development server
 npm run dev
-# → http://localhost:3000 (marketing)
-# → http://app.localhost (LMS, if APP_SITE_URL is configured)
+# → http://localhost:3000 (marketing + LMS on one origin)
 
 # 5. Build check
 npm run build
