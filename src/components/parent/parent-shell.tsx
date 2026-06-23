@@ -11,6 +11,7 @@ import {
   Menu,
   MessageCircle,
   Settings,
+  Sparkles,
   Users,
   X,
 } from "lucide-react";
@@ -32,6 +33,7 @@ const NAV_ITEMS: Omit<NavItem, "icon">[] = [
   { key: "assignments", label: "Assignments",  href: "/parent/assignments" },
   { key: "attendance",  label: "Activity",     href: "/parent/attendance" },
   { key: "messages",    label: "Teachers",     href: "/parent/messages" },
+  { key: "tutor",       label: "Aalgo AI",     href: "/parent/tutor" },
   { key: "fees",        label: "Fees",         href: "/parent/fees" },
   { key: "settings",    label: "Settings",     href: "/parent/settings" },
 ];
@@ -41,6 +43,7 @@ const ICON_MAP: Record<string, ReactNode> = {
   assignments: <ClipboardList   size={20} />,
   attendance:  <CalendarCheck   size={20} />,
   messages:    <MessageCircle   size={20} />,
+  tutor:       <Sparkles        size={20} />,
   fees:        <CreditCard      size={20} />,
   settings:    <Settings        size={20} />,
 };

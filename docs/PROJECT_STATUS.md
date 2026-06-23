@@ -2,7 +2,7 @@
 
 **Repository:** `aalgorix-world-academy`  
 **Document version:** 2.5  
-**Last updated:** June 22, 2026  
+**Last updated:** June 23, 2026  
 **Status:** Phase 0–8 substantially complete · Full Student Dashboard Suite live (12 pages) · Full Teacher Dashboard Suite live (9 pages) · Marketing Landing Page Live · Admin/Parent portals functional · **No payment integration — enrollment is admin-managed** · Zero tests
 
 ---
@@ -191,6 +191,7 @@ Full Admin course management and Teacher grading portals are implemented.
 | **Parent: Child linking** | ✅ Complete | Link code redemption + unlink; requires `parent_link_codes` migration deployed |
 | **Parent: Dashboard suite** | ✅ Complete | ParentShell; dashboard, assignments, activity, teachers, fees, settings, report card |
 | **Parent: Progress monitoring** | ✅ Complete | `parent/page.tsx`, shared `lib/parent/queries.ts` |
+| **Parent: Aalgo AI tutor** | ✅ Complete | `parent/tutor/page.tsx` — shared `AalgoAiWorkspace` |
 | **Parent: Report card** | ✅ Complete | `parent/report-card/[childId]/page.tsx` |
 
 ---
@@ -232,6 +233,7 @@ Server component that authenticates the user, verifies `teacher` (or `admin`) ro
 | `/teacher/schedule` | RSC + client | **Real** | Assignment deadlines + live sessions for assigned courses |
 | `/teacher/messages` | RSC + client | **Real** | Course-scoped messaging with enrolled students |
 | `/teacher/reports` | RSC | Real | Grade distribution bar chart, per-course avg % and pending count from real submission data |
+| `/teacher/tutor` | Client | Live | Full-page ElevenLabs text chat (`AalgoAiWorkspace`, `audience="teacher"`) |
 | `/teacher/profile` | RSC | Real | Profile card with avatar, email, courses assigned, teaching responsibilities grid |
 | `/teacher/settings` | Client | Local state | Theme toggle, language picker, notification toggles, security, privacy |
 
@@ -256,7 +258,7 @@ Rich interactive home page: real streak (activity-derived), weekly lesson goal, 
 | `/student/assignments` | RSC + Client | Real | `AssignmentsList` — tabbed by All/Todo/Submitted/Graded/Needs Revision |
 | `/student/assessments` | RSC + client | **Real** | Published assignments + graded submissions |
 | `/student/attendance` | RSC + client | **Real (derived)** | Weekday activity from lesson completions + submissions |
-| `/student/tutor` | Client | Simulated | Full chat UI, typing indicator, quick chips, voice toggle |
+| `/student/tutor` | Client | Live | Full-page text chat via `@elevenlabs/react` (`textOnly`); auto-connect; `NEXT_PUBLIC_ELEVENLABS_STUDENT_AGENT_ID` |
 | `/student/certificates` | Client | Mock | Badges (earned/locked grid) + Certificates (download + share); Scholar progress bar |
 | `/student/reports` | RSC | Real + mock charts | Per-course progress bars, avg grade, `PerformanceCharts` with real subject data |
 | `/student/messages` | RSC + client | **Real** | Teachers from enrolled courses; persisted chat threads |
@@ -352,7 +354,7 @@ aalgorix-world-academy/
 │   │   │   │   ├── assignments/page.tsx # Real Supabase data
 │   │   │   │   ├── assessments/page.tsx # Mock data
 │   │   │   │   ├── attendance/page.tsx  # Mock data
-│   │   │   │   ├── tutor/page.tsx       # AI chat UI
+│   │   │   │   ├── tutor/page.tsx       # Aalgo AI full-page text chat
 │   │   │   │   ├── certificates/page.tsx
 │   │   │   │   ├── reports/page.tsx     # Real Supabase data + charts
 │   │   │   │   ├── messages/page.tsx    # Mock data
@@ -367,6 +369,7 @@ aalgorix-world-academy/
 │   │   │   │
 │   │   │   ├── parent/
 │   │   │   │   ├── page.tsx
+│   │   │   │   ├── tutor/page.tsx       # Aalgo AI full-page text chat
 │   │   │   │   ├── report-card/[childId]/
 │   │   │   │   └── settings/            # Link code redemption
 │   │   │   │
@@ -385,6 +388,8 @@ aalgorix-world-academy/
 │   │   ├── blog/                # Blog card + rich-text renderer
 │   │   ├── brand/               # AWA logo
 │   │   ├── dashboard/           # Shared: dashboard-shell, stat-card, action-card
+│   │   ├── aalgo-ai/
+│   │   │   └── aalgo-ai-workspace.tsx   # Shared ElevenLabs text chat (student/parent/teacher)
 │   │   └── student/             # ◄ All student dashboard widgets
 │   │       ├── student-shell.tsx        # Full sidebar + topbar + mobile nav
 │   │       ├── hero-banner.tsx
@@ -548,7 +553,7 @@ The following remain to be completed before MVP readiness:
 | Student dashboard | `/student` — verify all 12 sidebar nav links resolve without 404 |
 | Student assignments | `/student/assignments` — verify real data loads from Supabase |
 | Student reports | `/student/reports` — verify real course progress + grades appear |
-| Student AI tutor | `/student/tutor` — verify chat sends and receives responses |
+| Student AI tutor | `/student/tutor`, `/parent/tutor`, `/teacher/tutor` — verify chat auto-connects, send messages, agent streams replies |
 
 ## Appendix B — Related documentation
 

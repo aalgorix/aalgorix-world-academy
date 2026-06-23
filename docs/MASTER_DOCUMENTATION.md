@@ -1,7 +1,7 @@
 # Aalgorix World Academy — Enterprise-Grade Master Documentation
 
 > **Document Type:** CTO Audit · Architecture Review · Product Analysis · Knowledge Transfer Guide  
-> **Generated:** June 17, 2026 · **Last Updated:** June 22, 2026  
+> **Generated:** June 17, 2026 · **Last Updated:** June 23, 2026  
 > **Codebase Revision:** Phase 0–3+ (Phases 0–1b complete + significant Phase 3–7 work implemented; full Student dashboard suite complete)  
 > **Audience:** Developer · Architect · CTO · Investor · PM · QA · DevOps · Designer · Stakeholder  
 
@@ -367,7 +367,7 @@ aalgorix-world-academy/
 │   │   │   │   ├── assignments/page.tsx     # /student/assignments — real data
 │   │   │   │   ├── assessments/page.tsx     # /student/assessments — mock data
 │   │   │   │   ├── attendance/page.tsx      # /student/attendance — monthly calendar
-│   │   │   │   ├── tutor/page.tsx           # /student/tutor — AI chat interface
+│   │   │   │   ├── tutor/page.tsx           # /student/tutor — full-page text chat via @elevenlabs/react
 │   │   │   │   ├── certificates/page.tsx    # /student/certificates — badges + certs
 │   │   │   │   ├── reports/page.tsx         # /student/reports — real Supabase data + charts
 │   │   │   │   ├── messages/page.tsx        # /student/messages — two-panel chat
@@ -432,6 +432,8 @@ aalgorix-world-academy/
 │   │   │   ├── dashboard-shell.tsx
 │   │   │   ├── action-card.tsx
 │   │   │   └── stat-card.tsx
+│   │   ├── aalgo-ai/                # Shared ElevenLabs text chat workspace
+│   │   │   └── aalgo-ai-workspace.tsx
 │   │   └── student/                 # Student dashboard widget components
 │   │       ├── student-shell.tsx    # ◄ Full sidebar navigation (Client) — 12 nav items
 │   │       ├── hero-banner.tsx
@@ -721,7 +723,7 @@ graph TB
 | Student: Streak tracking | | ✅ | | HIGH — UI present, DB backing TODO |
 | Student: Attendance tracking | ✅ | | | Derived from `lesson_progress` + `submissions` |
 | Student: Certificates | ✅ | | | Badges + certificates UI (mock data) |
-| Student: AI Tutor (in-LMS) | ✅ | | | Chat UI with simulated responses; real LLM TODO |
+| Student: AI Tutor (in-LMS) | ✅ | | | Shared `AalgoAiWorkspace` at `/student/tutor`, `/parent/tutor`, `/teacher/tutor` |
 | Student: Live classes | ✅ | | | `live_class_sessions` + real student live page |
 | Student: Assessments/Quizzes | ✅ | | | Published assignments + submissions (quiz engine TODO) |
 | Student: Messages | ✅ | | | `conversations` + `messages` tables; student/teacher chat UI |
@@ -1145,7 +1147,7 @@ Server Actions replace API routes for all authenticated mutations:
 | `/student/assignments` | `AssignmentsPage` (RSC) | Real Supabase | Fetches assignments + submissions; tabbed by status |
 | `/student/assessments` | `AssessmentsPage` (Client) | Mock | Upcoming / Results / Performance tabs |
 | `/student/attendance` | `AttendancePage` (Client) | Mock | Monthly calendar grid, ring chart, stat cards |
-| `/student/tutor` | `AiTutorPage` (Client) | Simulated | Full-page chat UI; quick chips; voice toggle |
+| `/student/tutor` | `AalgoAiWorkspace` (Client) | Live | Full-page text chat; auto-connect; always-visible input; separate student agent ID |
 | `/student/certificates` | `CertificatesPage` (Client) | Mock | Earned/locked badges + downloadable certificates |
 | `/student/reports` | `ProgressReportsPage` (RSC) | Real Supabase + mock charts | Per-course progress bars; avg grades; PerformanceCharts |
 | `/student/messages` | `MessagesPage` (Client) | Mock | Two-panel chat (contacts + thread); send messages |
@@ -1162,12 +1164,14 @@ Server Actions replace API routes for all authenticated mutations:
 |-------|-----------|---------|
 | `/teacher` | `TeacherHomePage` | Teacher profile, assigned courses |
 | `/teacher/grading` | `GradingStationPage` | `grading-station.tsx` — submissions queue for assigned courses |
+| `/teacher/tutor` | `AalgoAiWorkspace` (Client) | Full-page text chat; `audience="teacher"` |
 
 #### Parent (`/parent`)
 
 | Route | Component | Key Data |
 |-------|-----------|---------|
 | `/parent` | `ParentHomePage` | Linked children, course progress panels, grading timeline |
+| `/parent/tutor` | `AalgoAiWorkspace` (Client) | Full-page text chat; `audience="parent"` |
 | `/parent/report-card/[childId]` | `ReportCardPage` | Full grades + print button |
 | `/parent/settings` | `ParentSettingsPage` | Link code redemption, linked learners list |
 
@@ -1285,13 +1289,24 @@ This pattern means even if the proxy gate is bypassed (impossible in production,
 | **State Management** | 6-state FSM (`idle`, `connecting`, `listening`, `speaking`, `ending`, `error`) | Clean, correct |
 | **Error Handling** | Microphone permission errors caught explicitly | Good UX |
 | **Configuration** | `NEXT_PUBLIC_ELEVENLABS_AGENT_ID` env var | Must be configured |
+
+#### ElevenLabs Aalgo AI Tutor (student, parent, teacher)
+
+| Aspect | Status | Assessment |
+|--------|--------|------------|
+| **Integration** | Production | `@elevenlabs/react` SDK — `ConversationProvider` + `useConversation` in text-only mode |
+| **Deployment** | `/student/tutor`, `/parent/tutor`, `/teacher/tutor` | Gated by respective dashboard auth layouts |
+| **Component** | `components/aalgo-ai/aalgo-ai-workspace.tsx` | Shared UI; `audience` prop adjusts placeholder copy |
+| **UX** | Full-page chat | Scrollable message list + fixed bottom textarea; session auto-starts on page load |
+| **Agent** | Dedicated env var | `NEXT_PUBLIC_ELEVENLABS_STUDENT_AGENT_ID` (separate from marketing voice assistant) |
+| **Guard** | `if (!AALGO_AGENT_ID) return <ConfigError />` | Graceful when unconfigured |
 | **Guard** | `if (!AGENT_ID) return <ConfigError />` | Graceful when unconfigured |
 
 ### 15.2 AI Gaps
 
 | Gap | Risk | Recommendation |
 |-----|------|----------------|
-| **No in-LMS AI Tutor** | The student dashboard has an `AiTutorCard` widget that currently renders a placeholder | Connect the ElevenLabs agent or a text-based LLM (OpenAI) to the student workspace |
+| **No in-LMS AI Tutor** | ~~The student dashboard has an `AiTutorCard` widget that currently renders a placeholder~~ | **Resolved:** `/student/tutor` uses ElevenLabs text chat; still needs lesson-context injection |
 | **No context injection** | The voice assistant has no knowledge of the specific student's courses or progress | Pass lesson context as a system prompt to the ElevenLabs agent |
 | **No rate limiting on AI routes** | Unlimited sessions possible; cost risk | Add Supabase Edge Function as a proxy with per-user rate limiting |
 | **No conversation logging** | No record of AI interactions for moderation or quality improvement | Store session metadata in a `ai_sessions` table |
@@ -1575,7 +1590,8 @@ graph LR
 | `CONTENTFUL_SPACE_ID` | Blog CMS | Optional — graceful degradation |
 | `CONTENTFUL_ACCESS_TOKEN` | Blog CMS | Optional |
 | `CONTENTFUL_ENVIRONMENT` | Blog CMS | Default: `master` |
-| `NEXT_PUBLIC_ELEVENLABS_AGENT_ID` | AI Voice Assistant | Optional — shows config error when missing |
+| `NEXT_PUBLIC_ELEVENLABS_AGENT_ID` | AI Voice Assistant (marketing) | Optional — shows config error when missing |
+| `NEXT_PUBLIC_ELEVENLABS_STUDENT_AGENT_ID` | Aalgo AI tutor (student/parent/teacher `/tutor`) | Optional — shows config error when missing |
 | `PARENT_LINK_CODE_SECRET` | Parent linking | Min 16 chars — throws on missing |
 
 ### 19.4 Recommended CI/CD Pipeline

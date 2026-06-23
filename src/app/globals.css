@@ -263,3 +263,16 @@ p, li, blockquote {
   from { transform: translateX(0); }
   to   { transform: translateX(-50%); }
 }
+
+/* Student portal — Aalgo AI full-page chat (/student/tutor) */
+
+.aalgo-ai-workspace {
+  width: 100%;
+}
+
+@media (max-width: 767px) {
+  .aalgo-ai-workspace {
+    /* Student shell mobile bottom nav (~72px) + top header */
+    min-height: calc(100dvh - 4.25rem - 4.75rem);
+  }
+}
