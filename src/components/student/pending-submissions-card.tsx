@@ -36,16 +36,16 @@ export function PendingSubmissionsCard({ items }: PendingSubmissionsCardProps) {
     >
       <div className="flex items-center justify-between mb-4">
         <div className="text-[16px] font-extrabold text-[#1A1B2E]">
-          Pending assignments
+          Assignments to complete
         </div>
         <span className="text-[11.5px] font-bold text-[#5B5BF0] bg-[#EEF0FF] px-2 py-1 rounded-full">
-          {items.length} due
+          {items.length} open
         </span>
       </div>
 
       {items.length === 0 ? (
         <p className="text-[13px] text-[#9AA0B8] text-center py-4">
-          All caught up! No pending assignments.
+          All caught up! No open assignments right now.
         </p>
       ) : (
         <div className="flex flex-col gap-2.5">
@@ -84,7 +84,7 @@ export function PendingSubmissionsCard({ items }: PendingSubmissionsCardProps) {
       )}
 
       <Link
-        href="/student/notifications"
+        href="/student/assignments"
         className="w-full mt-3 flex items-center justify-center text-[13px] font-bold text-white bg-[#1A1B2E] py-3 rounded-[12px] transition-opacity hover:opacity-90"
       >
         View all assignments

@@ -1,67 +1,46 @@
 import {
   Award,
+  BookOpen,
   Code,
   Flame,
   FlaskConical,
+  Globe,
   Medal,
+  Sparkles,
+  Star,
   Trophy,
+  Zap,
 } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-type BadgeItem = {
-  name: string;
-  description: string;
-  icon: ReactNode;
-  grad: string;
-  shadow: string;
-  earned: boolean;
+import {
+  countEarnedBadges,
+  scholarProgress,
+  type StudentBadge,
+} from "@/lib/student/achievements";
+
+const ICONS: Record<string, ReactNode> = {
+  "math-whiz": <Trophy className="w-6 h-6 text-white" />,
+  "streak-30": <Flame className="w-6 h-6 text-white" />,
+  "code-master": <Code className="w-6 h-6 text-white" />,
+  "science-star": <FlaskConical className="w-6 h-6 text-white" />,
+  "history-buff": <Globe className="w-6 h-6 text-white" />,
+  "ai-explorer": <Sparkles className="w-6 h-6 text-white" />,
+  bookworm: <BookOpen className="w-6 h-6 text-white" />,
+  scholar: <Medal className="w-6 h-6 text-white" />,
+  "speed-learner": <Zap className="w-6 h-6 text-white" />,
+  "top-performer": <Star className="w-6 h-6 text-white" />,
 };
 
-const BADGES: BadgeItem[] = [
-  {
-    name: "Math Whiz",
-    description: "Aced 10 quizzes",
-    icon: <Trophy className="w-6 h-6 text-white" />,
-    grad: "linear-gradient(135deg,#FBBF24,#F59E0B)",
-    shadow: "rgba(245,158,11,.35)",
-    earned: true,
-  },
-  {
-    name: "30-Day Streak",
-    description: "Learned daily",
-    icon: <Flame className="w-6 h-6 text-white" />,
-    grad: "linear-gradient(135deg,#FB7185,#E11D48)",
-    shadow: "rgba(244,63,94,.3)",
-    earned: true,
-  },
-  {
-    name: "Code Master",
-    description: "Built 5 projects",
-    icon: <Code className="w-6 h-6 text-white" />,
-    grad: "linear-gradient(135deg,#A78BFA,#7C3AED)",
-    shadow: "rgba(139,92,246,.3)",
-    earned: true,
-  },
-  {
-    name: "Science Star",
-    description: "Top lab reports",
-    icon: <FlaskConical className="w-6 h-6 text-white" />,
-    grad: "linear-gradient(135deg,#34D399,#0E9F6E)",
-    shadow: "rgba(16,185,129,.3)",
-    earned: true,
-  },
-  {
-    name: "Scholar",
-    description: "2 badges to go",
-    icon: <Medal className="w-6 h-6 text-white" />,
-    grad: "linear-gradient(135deg,#C7CBE0,#9AA0B8)",
-    shadow: "rgba(0,0,0,.1)",
-    earned: false,
-  },
-];
+interface BadgesSectionProps {
+  badges: StudentBadge[];
+}
 
-export function BadgesSection() {
+export function BadgesSection({ badges }: BadgesSectionProps) {
+  const earned = countEarnedBadges(badges);
+  const scholar = scholarProgress(badges);
+
   return (
     <div
       className="bg-white border border-[#ECEDF3] rounded-[22px] p-[22px]"
@@ -76,7 +55,9 @@ export function BadgesSection() {
             Certificates &amp; achievements
           </div>
           <div className="text-[12.5px] font-medium text-[#9AA0B8] mt-0.5">
-            Keep the streak going — you&apos;re 2 badges from Scholar status
+            {scholar.remaining > 0
+              ? `${earned} earned · ${scholar.remaining} more to Scholar status`
+              : "Scholar status achieved — outstanding work!"}
           </div>
         </div>
         <Link
@@ -88,37 +69,43 @@ export function BadgesSection() {
         </Link>
       </div>
 
-      <div
-        className="grid gap-3.5"
-        style={{ gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))" }}
-      >
-        {BADGES.map((b) => (
-          <div
-            key={b.name}
-            className="border border-[#F0F1F6] rounded-[16px] p-4 flex flex-col items-center text-center gap-2.5 transition-transform hover:-translate-y-0.5"
-            style={{
-              background: b.earned ? "#fff" : "#FAFAFC",
-              opacity: b.earned ? 1 : 0.6,
-            }}
-          >
+      {badges.length === 0 ? (
+        <p className="text-center text-[13px] text-[#9AA0B8] py-8">
+          Complete lessons and assignments to start earning badges.
+        </p>
+      ) : (
+        <div
+          className="grid gap-3.5"
+          style={{ gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))" }}
+        >
+          {badges.map((badge) => (
             <div
-              className="w-[54px] h-[54px] rounded-[16px] flex items-center justify-center"
+              key={badge.id}
+              className="border border-[#F0F1F6] rounded-[16px] p-4 flex flex-col items-center text-center gap-2.5 transition-transform hover:-translate-y-0.5"
               style={{
-                background: b.grad,
-                boxShadow: `0 6px 16px ${b.shadow}`,
+                background: badge.earned ? "#fff" : "#FAFAFC",
+                opacity: badge.earned ? 1 : 0.6,
               }}
             >
-              {b.icon}
+              <div
+                className="w-[54px] h-[54px] rounded-[16px] flex items-center justify-center"
+                style={{
+                  background: badge.grad,
+                  boxShadow: badge.earned ? `0 6px 16px ${badge.shadow}` : "none",
+                }}
+              >
+                {ICONS[badge.id] ?? <Medal className="w-6 h-6 text-white" />}
+              </div>
+              <div className="text-[13.5px] font-bold text-[#1A1B2E]">
+                {badge.name}
+              </div>
+              <div className="text-[11px] font-medium text-[#9AA0B8]">
+                {badge.description}
+              </div>
             </div>
-            <div className="text-[13.5px] font-bold text-[#1A1B2E]">
-              {b.name}
-            </div>
-            <div className="text-[11px] font-medium text-[#9AA0B8]">
-              {b.description}
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import { StudentShell } from "@/components/student/student-shell";
+import { fetchStudentNavCounts } from "@/lib/student/queries";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function StudentLayout({
@@ -31,9 +32,10 @@ export default async function StudentLayout({
         .single()
     : { data: null };
 
+  const navCounts = user ? await fetchStudentNavCounts(user.id) : null;
+
   const displayName = profile?.full_name?.trim() || "Student";
 
-  // Best-effort grade label from first active enrollment
   const coursesField = enrollment?.courses as
     | { grade_level: string | null }
     | { grade_level: string | null }[]
@@ -44,7 +46,11 @@ export default async function StudentLayout({
   const gradeLabel = firstCourse?.grade_level ?? "Student";
 
   return (
-    <StudentShell displayName={displayName} gradeLabel={gradeLabel}>
+    <StudentShell
+      displayName={displayName}
+      gradeLabel={gradeLabel}
+      navCounts={navCounts}
+    >
       {children}
     </StudentShell>
   );

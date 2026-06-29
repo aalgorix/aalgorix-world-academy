@@ -3,6 +3,10 @@ import { redirect } from "next/navigation";
 import type { LearningActivityDay } from "@/lib/dashboard/learning-activity";
 import { unwrapOne } from "@/lib/dashboard/relations";
 import { isSubmissionStatus } from "@/lib/dashboard/submission-status";
+import {
+  computeStudentAchievements,
+  type AchievementSnapshot,
+} from "@/lib/student/achievements";
 import { createClient } from "@/lib/supabase/server";
 
 // ---------------------------------------------------------------------------
@@ -780,4 +784,325 @@ export function buildSubjectStatsForCharts(
       grad: palette[index % palette.length]!,
     }))
     .slice(0, 5);
+}
+
+// ---------------------------------------------------------------------------
+// Nav counts, due assignments, achievements
+// ---------------------------------------------------------------------------
+
+export type StudentNavCounts = {
+  assignmentsDue: number;
+  unreadMessages: number;
+  notifications: number;
+};
+
+export type DueAssignmentItem = {
+  id: string;
+  title: string;
+  courseTitle: string;
+  dueLabel: string;
+  priority: "high" | "medium" | "low";
+  workspaceHref: string | null;
+};
+
+export function formatAcademicYearLabel(
+  batchEnrolled?: string | null,
+  reference = new Date(),
+): string {
+  if (batchEnrolled?.trim()) return batchEnrolled.trim();
+
+  const year = reference.getFullYear();
+  const month = reference.getMonth();
+  const startYear = month >= 7 ? year : year - 1;
+  return `${startYear}–${startYear + 1}`;
+}
+
+export async function fetchStudentNavCounts(
+  studentId: string,
+): Promise<StudentNavCounts> {
+  const supabase = await createClient();
+  const courseIds = await fetchEnrolledCourseIds(studentId);
+
+  const [
+    { data: assignmentRows },
+    messageContacts,
+    { count: returnedCount },
+  ] = await Promise.all([
+    courseIds.length > 0
+      ? supabase
+          .from("assignments")
+          .select("id")
+          .in("course_id", courseIds)
+          .eq("is_published", true)
+      : Promise.resolve({ data: [] as { id: string }[] }),
+    import("@/lib/messages/queries").then((mod) =>
+      mod.fetchStudentMessageContacts(studentId),
+    ),
+    supabase
+      .from("submissions")
+      .select("*", { count: "exact", head: true })
+      .eq("student_id", studentId)
+      .eq("status", "returned"),
+  ]);
+
+  const assignmentIds = (assignmentRows ?? []).map((row) => row.id);
+  const { data: submissionRows } =
+    assignmentIds.length > 0
+      ? await supabase
+          .from("submissions")
+          .select("assignment_id, status")
+          .eq("student_id", studentId)
+          .in("assignment_id", assignmentIds)
+      : { data: [] as { assignment_id: string; status: string }[] };
+
+  const submissionByAssignment = new Map(
+    (submissionRows ?? []).map((row) => [row.assignment_id, row.status]),
+  );
+
+  const assignmentsDue = assignmentIds.filter((id) => {
+    const status = submissionByAssignment.get(id);
+    return (
+      !status ||
+      status === "not_submitted" ||
+      status === "draft" ||
+      status === "returned"
+    );
+  }).length;
+
+  const unreadMessages = messageContacts.reduce(
+    (sum, contact) => sum + contact.unread,
+    0,
+  );
+
+  return {
+    assignmentsDue,
+    unreadMessages,
+    notifications: (returnedCount ?? 0) + unreadMessages,
+  };
+}
+
+export async function fetchStudentDueAssignments(
+  studentId: string,
+  limit = 5,
+): Promise<DueAssignmentItem[]> {
+  const supabase = await createClient();
+  const courseIds = await fetchEnrolledCourseIds(studentId);
+  if (courseIds.length === 0) return [];
+
+  const { data: assignmentRows } = await supabase
+    .from("assignments")
+    .select(
+      `id, title, due_at, course_id, lesson_id,
+       courses ( id, title ),
+       lessons ( id )`,
+    )
+    .in("course_id", courseIds)
+    .eq("is_published", true)
+    .order("due_at", { ascending: true, nullsFirst: false });
+
+  const assignmentIds = (assignmentRows ?? []).map((row) => row.id);
+  const { data: submissionRows } =
+    assignmentIds.length > 0
+      ? await supabase
+          .from("submissions")
+          .select("assignment_id, status")
+          .eq("student_id", studentId)
+          .in("assignment_id", assignmentIds)
+      : { data: [] as { assignment_id: string; status: string }[] };
+
+  const submissionByAssignment = new Map(
+    (submissionRows ?? []).map((row) => [row.assignment_id, row.status]),
+  );
+
+  const now = Date.now();
+  const dayMs = 24 * 60 * 60 * 1000;
+
+  return (assignmentRows ?? [])
+    .flatMap((row) => {
+      const status = submissionByAssignment.get(row.id);
+      const needsAction =
+        !status ||
+        status === "not_submitted" ||
+        status === "draft" ||
+        status === "returned";
+      if (!needsAction) return [];
+
+      const course = unwrapOne(
+        row.courses as { id: string; title: string } | { id: string; title: string }[] | null,
+      );
+      const lesson = unwrapOne(
+        row.lessons as { id: string } | { id: string }[] | null,
+      );
+      const dueAt = row.due_at as string | null;
+      let dueLabel = status === "returned" ? "Needs revision" : "Open";
+      let priority: DueAssignmentItem["priority"] = "low";
+
+      if (dueAt) {
+        const due = new Date(dueAt).getTime();
+        const daysUntil = Math.ceil((due - now) / dayMs);
+        if (daysUntil < 0) {
+          dueLabel = "Overdue";
+          priority = "high";
+        } else if (daysUntil === 0) {
+          dueLabel = "Due today";
+          priority = "high";
+        } else if (daysUntil === 1) {
+          dueLabel = "Due tomorrow";
+          priority = "medium";
+        } else {
+          dueLabel = `Due in ${daysUntil}d`;
+          priority = daysUntil <= 3 ? "medium" : "low";
+        }
+      } else if (status === "returned") {
+        priority = "high";
+      }
+
+      const courseId = course?.id ?? (row.course_id as string);
+      const lessonId = lesson?.id ?? (row.lesson_id as string | null);
+      const workspaceHref =
+        courseId && lessonId
+          ? `/student/courses/${courseId}/lessons/${lessonId}`
+          : "/student/assignments";
+
+      return [
+        {
+          id: row.id as string,
+          title: row.title as string,
+          courseTitle: course?.title ?? "Course",
+          dueLabel,
+          priority,
+          workspaceHref,
+        },
+      ];
+    })
+    .slice(0, limit);
+}
+
+export async function fetchStudentAchievementSnapshot(studentId: string) {
+  const { fetchLearningActivity } = await import("@/lib/dashboard/learning-activity");
+  const {
+    computeProgressPercent,
+    fetchCompletedLessonsByEnrollment,
+    fetchLessonTotalsByCourse,
+  } = await import("@/lib/dashboard/course-progress");
+
+  const supabase = await createClient();
+  const courseIds = await fetchEnrolledCourseIds(studentId);
+
+  const { data: enrollmentRows } = await supabase
+    .from("enrollments")
+    .select("id, courses ( id, title, curriculum_tag )")
+    .eq("student_id", studentId)
+    .eq("status", "active");
+
+  const enrollmentIds = (enrollmentRows ?? []).map((row) => row.id as string);
+
+  const [
+    activity,
+    { data: submissionRows },
+    completedByEnrollment,
+    lessonTotalsByCourse,
+  ] = await Promise.all([
+    fetchLearningActivity(studentId),
+    courseIds.length > 0
+      ? supabase
+          .from("submissions")
+          .select(
+            `grade, graded_at, status, submitted_at,
+             assignments (
+               title,
+               courses ( title, curriculum_tag )
+             )`,
+          )
+          .eq("student_id", studentId)
+          .in("status", ["graded", "returned", "submitted"])
+      : Promise.resolve({ data: [] }),
+    enrollmentIds.length > 0
+      ? fetchCompletedLessonsByEnrollment(supabase, enrollmentIds)
+      : Promise.resolve(new Map<string, number>()),
+    courseIds.length > 0
+      ? fetchLessonTotalsByCourse(supabase, courseIds)
+      : Promise.resolve(new Map<string, number>()),
+  ]);
+
+  const courseProgress = (enrollmentRows ?? []).flatMap((row) => {
+    const course = unwrapOne(
+      row.courses as
+        | { id: string; title: string; curriculum_tag: string | null }
+        | { id: string; title: string; curriculum_tag: string | null }[]
+        | null,
+    );
+    if (!course) return [];
+
+    const completed = completedByEnrollment.get(row.id as string) ?? 0;
+    const total = lessonTotalsByCourse.get(course.id) ?? 0;
+    return [
+      {
+        courseId: course.id,
+        courseTitle: course.title,
+        curriculumTag: course.curriculum_tag,
+        progressPercent: computeProgressPercent(completed, total),
+        completedLessons: completed,
+        totalLessons: total,
+      },
+    ];
+  });
+
+  const gradedSubmissions = (submissionRows ?? []).flatMap((row) => {
+    if (row.status !== "graded" || row.grade == null) return [];
+    const assignment = unwrapOne(
+      row.assignments as
+        | {
+            title: string;
+            courses:
+              | { title: string; curriculum_tag: string | null }
+              | { title: string; curriculum_tag: string | null }[]
+              | null;
+          }
+        | {
+            title: string;
+            courses:
+              | { title: string; curriculum_tag: string | null }
+              | { title: string; curriculum_tag: string | null }[]
+              | null;
+          }[]
+        | null,
+    );
+    const course = unwrapOne(assignment?.courses ?? null);
+    return [
+      {
+        grade: row.grade as number,
+        courseTitle: course?.title ?? "Course",
+        curriculumTag: course?.curriculum_tag ?? null,
+        assignmentTitle: assignment?.title ?? "Assignment",
+        gradedAt: (row.graded_at as string | null) ?? null,
+      },
+    ];
+  });
+
+  const submittedAssignmentCount = (submissionRows ?? []).filter(
+    (row) => row.status === "submitted" || row.status === "graded" || row.status === "returned",
+  ).length;
+
+  const totalLessonsCompleted = [...completedByEnrollment.values()].reduce(
+    (sum, count) => sum + count,
+    0,
+  );
+
+  const maxLessonsInOneDay = activity.reduce(
+    (max, day) => Math.max(max, day.lessonsCompleted),
+    0,
+  );
+
+  const snapshot: AchievementSnapshot = {
+    streakDays: computeActivityStreak(activity),
+    totalLessonsCompleted,
+    maxLessonsInOneDay,
+    submittedAssignmentCount,
+    gradedSubmissions,
+    courseProgress,
+    activity,
+  };
+
+  return computeStudentAchievements(snapshot);
 }

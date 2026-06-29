@@ -190,7 +190,7 @@ export function HeroBanner({
                 className="text-[10px] font-semibold"
                 style={{ color: "rgba(255,255,255,.8)" }}
               >
-                {goalDone}/{goalTotal} days
+                {goalDone}/{goalTotal} lessons
               </span>
             </div>
           </div>

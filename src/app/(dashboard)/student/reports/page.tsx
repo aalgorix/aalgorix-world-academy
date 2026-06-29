@@ -10,6 +10,11 @@ import {
 } from "@/lib/dashboard/course-progress";
 import { unwrapOne } from "@/lib/dashboard/relations";
 import { isSubmissionStatus } from "@/lib/dashboard/submission-status";
+import {
+  buildQuizScoreTrend,
+  buildWeeklyHoursFromActivity,
+} from "@/lib/student/queries";
+import { fetchLearningActivity } from "@/lib/dashboard/learning-activity";
 import { createClient } from "@/lib/supabase/server";
 
 // ---------------------------------------------------------------------------
@@ -67,9 +72,10 @@ export default async function ProgressReportsPage() {
   const enrollmentIds = enrollments.map((e) => e.enrollmentId);
   const courseIds     = enrollments.map((e) => e.course.id);
 
-  const [lessonTotals, completedByEnrollment] = await Promise.all([
+  const [lessonTotals, completedByEnrollment, learningActivity] = await Promise.all([
     fetchLessonTotalsByCourse(supabase, courseIds),
     fetchCompletedLessonsByEnrollment(supabase, enrollmentIds),
+    fetchLearningActivity(user.id),
   ]);
 
   // -- graded submissions ----------------------------------------------------
@@ -137,6 +143,9 @@ export default async function ProgressReportsPage() {
       score: r.avg!,
       grad:  PALETTE[i % PALETTE.length]!.grad,
     }));
+
+  const weeklyHours = buildWeeklyHoursFromActivity(learningActivity);
+  const quizScores = buildQuizScoreTrend(gradedScores);
 
   // -------------------------------------------------------------------------
   return (
@@ -217,13 +226,14 @@ export default async function ProgressReportsPage() {
         )}
       </div>
 
-      {/* performance charts (real subject data if available, otherwise default mock) */}
-      {subjectStats.length > 0 && (
-        <div>
-          <h2 className="text-[17px] font-extrabold text-[#1A1B2E] mb-4">Performance analytics</h2>
-          <PerformanceCharts subjectStats={subjectStats} />
-        </div>
-      )}
+      <div>
+        <h2 className="text-[17px] font-extrabold text-[#1A1B2E] mb-4">Performance analytics</h2>
+        <PerformanceCharts
+          weeklyHours={weeklyHours}
+          quizScores={quizScores.length >= 2 ? quizScores : undefined}
+          subjectStats={subjectStats.length > 0 ? subjectStats : undefined}
+        />
+      </div>
     </div>
   );
 }

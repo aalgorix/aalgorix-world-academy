@@ -1,9 +1,9 @@
 # Aalgorix World Academy — Engineering Source of Truth
 
 **Repository:** `aalgorix-world-academy`  
-**Document version:** 2.5  
+**Document version:** 2.6  
 **Last updated:** June 23, 2026  
-**Status:** Phase 0–8 substantially complete · Full Student Dashboard Suite live (12 pages) · Full Teacher Dashboard Suite live (9 pages) · Marketing Landing Page Live · Admin/Parent portals functional · **No payment integration — enrollment is admin-managed** · Zero tests
+**Status:** Phase 0–8 substantially complete · Full Student Dashboard Suite live (12 pages) · Full Teacher Dashboard Suite live (9 pages) · Marketing Landing Page Live · Admin/Parent portals functional · **LMS Aalgo AI wired to live portal data (client tools + API)** · **No payment integration — enrollment is admin-managed** · Zero tests
 
 ---
 
@@ -191,7 +191,7 @@ Full Admin course management and Teacher grading portals are implemented.
 | **Parent: Child linking** | ✅ Complete | Link code redemption + unlink; requires `parent_link_codes` migration deployed |
 | **Parent: Dashboard suite** | ✅ Complete | ParentShell; dashboard, assignments, activity, teachers, fees, settings, report card |
 | **Parent: Progress monitoring** | ✅ Complete | `parent/page.tsx`, shared `lib/parent/queries.ts` |
-| **Parent: Aalgo AI tutor** | ✅ Complete | `parent/tutor/page.tsx` — shared `AalgoAiWorkspace` |
+| **Parent: Aalgo AI tutor** | ✅ Complete | `parent/tutor/page.tsx` — shared `AalgoAiWorkspace` + LMS API tools |
 | **Parent: Report card** | ✅ Complete | `parent/report-card/[childId]/page.tsx` |
 
 ---
@@ -247,7 +247,7 @@ The entire student-facing dashboard has been designed, implemented and wired. Al
 Responsive sidebar layout (full on desktop, icon-only on tablet, drawer on mobile) with 12 nav items and a mobile bottom tab bar.
 
 #### Dashboard Home (`student/page.tsx`)
-Rich interactive home page: real streak (activity-derived), weekly lesson goal, attendance ring, today's schedule, notification previews, performance charts from graded submissions; badges section still mock.
+Rich interactive home page: real streak, weekly lesson goal, attendance ring, today's schedule, notification previews, performance charts, and achievement badges derived from enrollments, submissions, and lesson progress.
 
 #### All Student Pages
 
@@ -258,13 +258,13 @@ Rich interactive home page: real streak (activity-derived), weekly lesson goal, 
 | `/student/assignments` | RSC + Client | Real | `AssignmentsList` — tabbed by All/Todo/Submitted/Graded/Needs Revision |
 | `/student/assessments` | RSC + client | **Real** | Published assignments + graded submissions |
 | `/student/attendance` | RSC + client | **Real (derived)** | Weekday activity from lesson completions + submissions |
-| `/student/tutor` | Client | Live | Full-page text chat via `@elevenlabs/react` (`textOnly`); auto-connect; `NEXT_PUBLIC_ELEVENLABS_STUDENT_AGENT_ID` |
-| `/student/certificates` | Client | Mock | Badges (earned/locked grid) + Certificates (download + share); Scholar progress bar |
-| `/student/reports` | RSC | Real + mock charts | Per-course progress bars, avg grade, `PerformanceCharts` with real subject data |
+| `/student/tutor` | RSC + Client | Live | Full-page text chat; `loadTutorPageSession` + client tools → `/api/ai/lms/*` |
+| `/student/certificates` | RSC + Client | Live | Badges + certificates computed from course progress and graded submissions |
+| `/student/reports` | RSC | Real | Per-course progress bars, avg grade, `PerformanceCharts` from activity + grades |
+| `/student/settings` | RSC + Client | Live | Theme, language, notification, and privacy prefs persisted to `profiles.metadata` |
 | `/student/messages` | RSC + client | **Real** | Teachers from enrolled courses; persisted chat threads |
 | `/student/calendar` | RSC + client | **Real** | Assignment due dates + live sessions from enrolled courses |
 | `/student/notifications` | RSC | Real | Pending + submitted submissions |
-| `/student/settings` | Client | Local state | Theme toggle, language picker, notification toggles, security, privacy |
 
 ---
 
@@ -379,9 +379,13 @@ aalgorix-world-academy/
 │   │   │       └── staffing/            # Teacher assignment
 │   │   │
 │   │   ├── api/
+│   │   │   ├── ai/lms/                  # Authenticated LMS data for Aalgo AI tools
 │   │   │   ├── brochure/route.ts
 │   │   │   └── contact-inquiry/route.ts
 │   │   └── auth/callback/route.ts       # PKCE/OAuth code exchange
+│   │
+│   ├── lib/
+│   │   └── ai/                          # lms-context, load-tutor-session, API session auth
 │   │
 │   ├── components/
 │   │   ├── auth/                # Auth UI primitives
@@ -489,7 +493,7 @@ Phases are ordered for **vertical slice delivery**. **Stripe billing is intentio
 | **6** | Parent Performance Dashboard | ✅ **Complete** | ParentShell + 7 routes; progress, assignments, activity, teachers, fees, settings, report card |
 | **7** | Full Student Dashboard Suite | ✅ **Complete** | All 12 student routes: dashboard, courses, live, assignments, assessments, attendance, AI tutor, certificates, reports, messages, calendar, settings |
 | **8** | Full Teacher Dashboard Suite | ✅ **Complete** | All 9 teacher routes: dashboard, grading, courses, students, schedule, messages, reports, profile, settings |
-| **9** | Real Data Wiring | 🔶 In progress | Calendar, attendance, assessments, live, schedule, messages, dashboard widgets wired; certificates/badges + AI tutor still mock |
+| **9** | Real Data Wiring | 🔶 In progress | Student portal mock data removed (badges, certificates, nav counts, settings, charts); attendance remains activity-derived |
 | **Next** | Admin polish | 🔶 In progress | Course edit, enrollment lifecycle, user edit, platform settings (`platform_settings` migration) |
 
 ### 5.1 Phase dependency graph (logical)
@@ -553,7 +557,7 @@ The following remain to be completed before MVP readiness:
 | Student dashboard | `/student` — verify all 12 sidebar nav links resolve without 404 |
 | Student assignments | `/student/assignments` — verify real data loads from Supabase |
 | Student reports | `/student/reports` — verify real course progress + grades appear |
-| Student AI tutor | `/student/tutor`, `/parent/tutor`, `/teacher/tutor` — verify chat auto-connects, send messages, agent streams replies |
+| Student AI tutor | `/student/tutor`, `/parent/tutor`, `/teacher/tutor` — verify chat auto-connects; ask “what assignments are due?” and confirm `/api/ai/lms/assignments` returns data |
 
 ## Appendix B — Related documentation
 
@@ -561,6 +565,7 @@ The following remain to be completed before MVP readiness:
 |----------|----------|
 | Target architecture & full future tree | `docs/ARCHITECTURE.md` |
 | Enterprise LMS spec (Cambridge/NIOS, batches, RBAC, ERD, API) | `docs/ENTERPRISE_ARCHITECTURE.md` |
+| ElevenLabs LMS agent setup (tools, variables, prompts) | `docs/ELEVENLABS_LMS_SETUP.md` |
 | Database DDL + RLS source | `supabase/migrations/20250521000000_foundation.sql` |
 | Agent / Next.js 16 conventions | `AGENTS.md` |
 

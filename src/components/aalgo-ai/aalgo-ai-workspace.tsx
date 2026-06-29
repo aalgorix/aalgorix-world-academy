@@ -4,17 +4,26 @@ import {
   ConversationProvider,
   useConversation,
   type ConversationStatus,
+  type HookOptions,
 } from "@elevenlabs/react";
 import { Loader2, Send, Sparkles } from "lucide-react";
 import {
   useCallback,
   useEffect,
   useId,
+  useMemo,
   useRef,
   useState,
   type FormEvent,
   type KeyboardEvent,
 } from "react";
+
+import type { LmsAiSessionContext } from "@/lib/ai/lms-context";
+import {
+  fetchLmsTool,
+  warmLmsToolCache,
+  type LmsToolSegment,
+} from "@/lib/ai/client-tool-responses";
 
 const AALGO_AGENT_ID =
   process.env.NEXT_PUBLIC_ELEVENLABS_STUDENT_AGENT_ID ?? "";
@@ -135,6 +144,21 @@ function MissingAgentConfig() {
   );
 }
 
+function createLmsClientTools(getSession: () => LmsAiSessionContext) {
+  const call = (segment: LmsToolSegment) => {
+    const session = getSession();
+    return fetchLmsTool(segment, session.userId, session);
+  };
+
+  return {
+    get_lms_summary: () => call("summary"),
+    get_due_assignments: () => call("assignments"),
+    get_attendance_summary: () => call("attendance"),
+    get_upcoming_schedule: () => call("schedule"),
+    get_recent_grades: () => call("grades"),
+  };
+}
+
 function AalgoHeader({
   status,
   isTyping,
@@ -220,8 +244,33 @@ function EmptyState({
   );
 }
 
-function AalgoChatInner({ audience }: { audience: AalgoAudience }) {
+function AalgoChatInner({
+  audience,
+  session,
+}: {
+  audience: AalgoAudience;
+  session: LmsAiSessionContext;
+}) {
   const copy = AUDIENCE_COPY[audience];
+  const sessionRef = useRef(session);
+  sessionRef.current = session;
+
+  const clientTools = useMemo(
+    () => createLmsClientTools(() => sessionRef.current),
+    [],
+  );
+
+  const startLmsSession = useCallback(
+    (startSession: (options?: HookOptions) => void) => {
+      startSession({
+        textOnly: true,
+        userId: sessionRef.current.userId,
+        dynamicVariables: sessionRef.current.dynamicVariables,
+        clientTools,
+      });
+    },
+    [clientTools],
+  );
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [draft, setDraft] = useState("");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -344,7 +393,11 @@ function AalgoChatInner({ audience }: { audience: AalgoAudience }) {
     status,
   } = useConversation({
     textOnly: true,
-    onConnect: () => setErrorMsg(null),
+    clientTools,
+    onConnect: () => {
+      setErrorMsg(null);
+      warmLmsToolCache(sessionRef.current.userId);
+    },
     onDisconnect: () => setIsTyping(false),
     onError: (message) => setErrorMsg(message),
     onMessage: handleServerMessage,
@@ -359,8 +412,8 @@ function AalgoChatInner({ audience }: { audience: AalgoAudience }) {
   useEffect(() => {
     if (connectAttempted.current || status !== "disconnected") return;
     connectAttempted.current = true;
-    startSession({ textOnly: true });
-  }, [status, startSession]);
+    startLmsSession(startSession);
+  }, [status, startSession, startLmsSession]);
 
   useEffect(() => {
     scrollAnchorRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -399,7 +452,7 @@ function AalgoChatInner({ audience }: { audience: AalgoAudience }) {
       endSession();
     }
     connectAttempted.current = true;
-    startSession({ textOnly: true });
+    startLmsSession(startSession);
   };
 
   return (
@@ -507,9 +560,13 @@ function AalgoChatInner({ audience }: { audience: AalgoAudience }) {
 
 export type AalgoAiWorkspaceProps = {
   audience?: AalgoAudience;
+  session: LmsAiSessionContext;
 };
 
-export function AalgoAiWorkspace({ audience = "student" }: AalgoAiWorkspaceProps) {
+export function AalgoAiWorkspace({
+  audience = "student",
+  session,
+}: AalgoAiWorkspaceProps) {
   if (!AALGO_AGENT_ID) {
     return (
       <div className="aalgo-ai-workspace flex min-h-[calc(100dvh-4rem)] flex-col">
@@ -521,7 +578,7 @@ export function AalgoAiWorkspace({ audience = "student" }: AalgoAiWorkspaceProps
 
   return (
     <ConversationProvider agentId={AALGO_AGENT_ID} textOnly>
-      <AalgoChatInner audience={audience} />
+      <AalgoChatInner audience={audience} session={session} />
     </ConversationProvider>
   );
 }

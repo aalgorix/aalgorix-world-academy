@@ -27,6 +27,7 @@ import { usePathname } from "next/navigation";
 import { type ReactNode, useState } from "react";
 
 import { ProfileDropdown } from "@/components/ui/profile-dropdown";
+import type { StudentNavCounts } from "@/lib/student/queries";
 
 // ---------------------------------------------------------------------------
 // Nav definition
@@ -43,17 +44,17 @@ function NavIcon({ icon }: { icon: ReactNode }) {
   return <span className="shrink-0 w-5 h-5 flex items-center justify-center">{icon}</span>;
 }
 
-const NAV_ITEMS: Omit<NavItem, "icon">[] = [
+const NAV_ITEMS: Omit<NavItem, "icon" | "badge">[] = [
   { key: "dashboard",    label: "Dashboard",        href: "/student" },
   { key: "courses",      label: "My Courses",        href: "/student/courses" },
   { key: "live",         label: "Live Classes",      href: "/student/live" },
-  { key: "assignments",  label: "Assignments",       href: "/student/assignments", badge: "3" },
+  { key: "assignments",  label: "Assignments",       href: "/student/assignments" },
   { key: "assessments",  label: "Assessments",       href: "/student/assessments" },
   { key: "attendance",   label: "Attendance",        href: "/student/attendance" },
   { key: "tutor",        label: "Aalgo AI",          href: "/student/tutor" },
   { key: "certificates", label: "Certificates",      href: "/student/certificates" },
   { key: "reports",      label: "Progress Reports",  href: "/student/reports" },
-  { key: "messages",     label: "Messages",          href: "/student/messages", badge: "2" },
+  { key: "messages",     label: "Messages",          href: "/student/messages" },
   { key: "calendar",     label: "Calendar",          href: "/student/calendar" },
   { key: "settings",     label: "Settings",          href: "/student/settings" },
 ];
@@ -136,6 +137,21 @@ interface StudentShellProps {
   children: ReactNode;
   displayName: string;
   gradeLabel: string;
+  navCounts?: StudentNavCounts | null;
+}
+
+function badgeForKey(
+  key: string,
+  navCounts?: StudentNavCounts | null,
+): string | undefined {
+  if (!navCounts) return undefined;
+  if (key === "assignments" && navCounts.assignmentsDue > 0) {
+    return String(navCounts.assignmentsDue);
+  }
+  if (key === "messages" && navCounts.unreadMessages > 0) {
+    return String(navCounts.unreadMessages);
+  }
+  return undefined;
 }
 
 // ---------------------------------------------------------------------------
@@ -145,6 +161,7 @@ export function StudentShell({
   children,
   displayName,
   gradeLabel,
+  navCounts,
 }: StudentShellProps) {
   const pathname = usePathname();
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -154,6 +171,7 @@ export function StudentShell({
   const navItems: NavItem[] = NAV_ITEMS.map((n) => ({
     ...n,
     icon: ICON_MAP[n.key],
+    badge: badgeForKey(n.key, navCounts),
   }));
 
   const bottomItems = BOTTOM_KEYS.map((k) =>
@@ -272,7 +290,9 @@ export function StudentShell({
               className="relative w-[42px] h-[42px] rounded-[12px] border border-[#ECEDF3] bg-white flex items-center justify-center text-[#41435F]"
             >
               <Bell className="w-[19px] h-[19px]" />
-              <span className="absolute top-[9px] right-[10px] w-2 h-2 bg-[#FB7185] border-2 border-white rounded-full" />
+              {(navCounts?.notifications ?? 0) > 0 ? (
+                <span className="absolute top-[9px] right-[10px] w-2 h-2 bg-[#FB7185] border-2 border-white rounded-full" />
+              ) : null}
             </Link>
 
             {/* avatar + name — dropdown */}
@@ -294,7 +314,7 @@ export function StudentShell({
                 </div>
               }
               items={[
-                { label: "View profile",   href: "/student/settings", icon: <User        size={15} /> },
+                { label: "View profile",   href: "/student/profile", icon: <User        size={15} /> },
                 { label: "Settings",       href: "/student/settings", icon: <Settings    size={15} /> },
                 { label: "Messages",       href: "/student/messages", icon: <MessageCircle size={15} /> },
                 { label: "Help & support", href: "/contact",          icon: <HelpCircle  size={15} /> },

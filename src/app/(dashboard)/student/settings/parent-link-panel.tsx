@@ -7,7 +7,7 @@ import { formatExpiryLabel } from "@/lib/parent-link/codes";
 import {
   generateParentLinkCodeAction,
   type ParentLinkActionState,
-} from "./actions";
+} from "@/app/(dashboard)/student/profile/actions";
 
 const initialState: ParentLinkActionState | null = null;
 

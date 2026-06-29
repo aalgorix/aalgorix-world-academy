@@ -16,55 +16,14 @@ const STATUS_COLORS: Record<AttendanceStatus, string> = {
   late: "#FBBF24",
 };
 
-// Mock 30-day attendance pattern (1=present, 0=absent, 2=holiday, 3=late)
-const PATTERN: AttendanceStatus[] = [
-  "late",
-  "present",
-  "present",
-  "present",
-  "present",
-  "holiday",
-  "holiday",
-  "present",
-  "present",
-  "present",
-  "present",
-  "present",
-  "holiday",
-  "holiday",
-  "present",
-  "present",
-  "absent",
-  "present",
-  "present",
-  "holiday",
-  "holiday",
-  "present",
-  "present",
-  "present",
-  "present",
-  "present",
-  "holiday",
-  "holiday",
-  "present",
-  "present",
-];
-
-function buildDays(): AttendanceDay[] {
-  return PATTERN.map((status, i) => ({
-    status,
-    label: `Day ${i + 1} – ${status.charAt(0).toUpperCase() + status.slice(1)}`,
-  }));
-}
-
 interface AttendanceMiniCardProps {
-  attendancePercent?: number;
-  days?: AttendanceDay[];
+  attendancePercent: number;
+  days: AttendanceDay[];
 }
 
 export function AttendanceMiniCard({
-  attendancePercent = 96,
-  days = buildDays(),
+  attendancePercent,
+  days,
 }: AttendanceMiniCardProps) {
   return (
     <div
@@ -76,18 +35,17 @@ export function AttendanceMiniCard({
     >
       <div className="flex items-center justify-between mb-4">
         <div className="text-[16px] font-extrabold text-[#1A1B2E]">
-          Attendance
+          Learning activity
         </div>
         <span className="text-[18px] font-extrabold text-[#0E9F6E]">
           {attendancePercent}%
         </span>
       </div>
 
-      {/* dot grid */}
       <div className="flex flex-wrap gap-1.5">
         {days.map((d, i) => (
           <motion.span
-            key={i}
+            key={`${d.label}-${i}`}
             title={d.label}
             className="rounded-[6px]"
             style={{
@@ -102,13 +60,11 @@ export function AttendanceMiniCard({
         ))}
       </div>
 
-      {/* legend */}
       <div className="flex flex-wrap gap-4 mt-3.5 text-[11px] font-semibold text-[#9AA0B8]">
         {(
           [
-            ["present", "#10B981", "Present"],
-            ["absent", "#FB7185", "Absent"],
-            ["holiday", "#EEF0F5", "Holiday"],
+            ["present", "#10B981", "Active day"],
+            ["absent", "#FB7185", "No activity"],
           ] as const
         ).map(([, color, label]) => (
           <span key={label} className="flex items-center gap-1.5">

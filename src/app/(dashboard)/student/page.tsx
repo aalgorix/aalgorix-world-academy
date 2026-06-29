@@ -34,8 +34,12 @@ import {
   computeMonthAttendancePercent,
   computeWeeklyLessonGoal,
   fetchNotificationPreviews,
+  fetchStudentAchievementSnapshot,
+  fetchStudentDueAssignments,
   fetchTodayScheduleItems,
+  formatAcademicYearLabel,
 } from "@/lib/student/queries";
+import { parseStudentMetadata } from "@/app/(dashboard)/student/profile/types";
 import { fetchFirstLessonIdForCourse } from "@/lib/student/workspace";
 import { createClient } from "@/lib/supabase/server";
 
@@ -141,9 +145,10 @@ export default async function StudentHomePage() {
     { data: metricSubmissionRows },
     { data: feedbackSubmissionRows },
     { count: returnedRevisionCount },
-    { data: pendingSubmissionRows },
+    dueAssignments,
+    achievements,
   ] = await Promise.all([
-    supabase.from("profiles").select("full_name").eq("id", user.id).single(),
+    supabase.from("profiles").select("full_name, metadata").eq("id", user.id).single(),
     supabase
       .from("enrollments")
       .select(
@@ -175,20 +180,8 @@ export default async function StudentHomePage() {
       .select("*", { count: "exact", head: true })
       .eq("student_id", user.id)
       .eq("status", "returned"),
-    supabase
-      .from("submissions")
-      .select(`
-        id, status, submitted_at,
-        assignments (
-          title,
-          courses ( id, title ),
-          lessons  ( id, title )
-        )
-      `)
-      .eq("student_id", user.id)
-      .eq("status", "submitted")
-      .order("submitted_at", { ascending: true })
-      .limit(5),
+    fetchStudentDueAssignments(user.id, 5),
+    fetchStudentAchievementSnapshot(user.id),
   ]);
 
   // ------------------------------------------------------------------
@@ -250,62 +243,9 @@ export default async function StudentHomePage() {
   const actionItems = returnedRevisionCount ?? 0;
 
   // ------------------------------------------------------------------
-  // Pending assignments (submitted, awaiting grading)
+  // Assignments that still need student action
   // ------------------------------------------------------------------
-  const pendingItems: PendingItem[] = ((pendingSubmissionRows ?? []) as {
-    id: string;
-    status: string;
-    submitted_at: string | null;
-    assignments: {
-      title: string;
-      courses: { id: string; title: string } | { id: string; title: string }[] | null;
-      lessons: { id: string; title: string } | { id: string; title: string }[] | null;
-    } | {
-      title: string;
-      courses: { id: string; title: string } | { id: string; title: string }[] | null;
-      lessons: { id: string; title: string } | { id: string; title: string }[] | null;
-    }[] | null;
-  }[]).flatMap((row) => {
-    if (!isSubmissionStatus(row.status)) return [];
-    const assignment = unwrapOne(row.assignments);
-    if (!assignment) return [];
-    const course = unwrapOne(assignment.courses);
-    const lesson = unwrapOne(assignment.lessons);
-    const submittedAt = row.submitted_at ? new Date(row.submitted_at) : null;
-    const daysAgo = submittedAt
-      ? Math.floor((Date.now() - submittedAt.getTime()) / 86400000)
-      : null;
-    const dueLabel =
-      daysAgo === null
-        ? "Submitted"
-        : daysAgo === 0
-          ? "Today"
-          : daysAgo === 1
-            ? "Yesterday"
-            : `${daysAgo}d ago`;
-    const priority: PendingItem["priority"] =
-      daysAgo === null || daysAgo <= 1
-        ? "high"
-        : daysAgo <= 3
-          ? "medium"
-          : "low";
-    const lessonId = lesson?.id ?? null;
-    const courseId = course?.id ?? null;
-    const workspaceHref =
-      courseId && lessonId
-        ? `/student/courses/${courseId}/lessons/${lessonId}`
-        : null;
-    return [
-      {
-        id: row.id,
-        title: assignment.title,
-        courseTitle: course?.title ?? "Course",
-        dueLabel,
-        priority,
-        workspaceHref,
-      },
-    ];
-  });
+  const pendingItems: PendingItem[] = dueAssignments;
 
   // ------------------------------------------------------------------
   // Recent feedback (graded/returned) – for revisions ribbon
@@ -332,7 +272,8 @@ export default async function StudentHomePage() {
   // Grade from first course's grade_level field (best-effort)
   const gradeLabel =
     enrollments[0]?.course.grade_level ?? "Student";
-  const yearLabel = "2025–2026";
+  const studentMetadata = parseStudentMetadata(profile?.metadata);
+  const yearLabel = formatAcademicYearLabel(studentMetadata.batch_enrolled);
   const streakDays = computeActivityStreak(learningActivity);
   const weeklyGoal = computeWeeklyLessonGoal(learningActivity);
   const attendancePercent = computeMonthAttendancePercent(learningActivity);
@@ -511,7 +452,7 @@ export default async function StudentHomePage() {
 
         {/* ── Section 5: Badges & achievements ─────────────────────── */}
         <div className="mt-5">
-          <BadgesSection />
+          <BadgesSection badges={achievements.badges.slice(0, 5)} />
         </div>
     </div>
   );

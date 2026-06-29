@@ -410,11 +410,15 @@ aalgorix-world-academy/
 │   │   │           └── actions.ts
 │   │   │
 │   │   ├── api/
+│   │   │   ├── ai/lms/                 # GET — authenticated LMS data for Aalgo AI client tools
 │   │   │   ├── brochure/route.ts       # POST — sends brochure PDF link by email
 │   │   │   └── contact-inquiry/route.ts # POST — sends contact inquiry by email
 │   │   │
 │   │   └── auth/
 │   │       └── callback/route.ts    # GET — PKCE/OAuth code exchange → session
+│   │
+│   ├── lib/
+│   │   └── ai/                      # lms-context, load-tutor-session, require-lms-api-session
 │   │
 │   ├── components/
 │   │   ├── auth/                    # Login/Signup presentational primitives
@@ -722,7 +726,7 @@ graph TB
 | Signed URL generation (video/worksheet) | ✅ | | | — |
 | Student: Streak tracking | | ✅ | | HIGH — UI present, DB backing TODO |
 | Student: Attendance tracking | ✅ | | | Derived from `lesson_progress` + `submissions` |
-| Student: Certificates | ✅ | | | Badges + certificates UI (mock data) |
+| Student: Certificates | ✅ | | | `lib/student/achievements.ts` — computed badges + course-completion certificates |
 | Student: AI Tutor (in-LMS) | ✅ | | | Shared `AalgoAiWorkspace` at `/student/tutor`, `/parent/tutor`, `/teacher/tutor` |
 | Student: Live classes | ✅ | | | `live_class_sessions` + real student live page |
 | Student: Assessments/Quizzes | ✅ | | | Published assignments + submissions (quiz engine TODO) |
@@ -1148,8 +1152,9 @@ Server Actions replace API routes for all authenticated mutations:
 | `/student/assessments` | `AssessmentsPage` (Client) | Mock | Upcoming / Results / Performance tabs |
 | `/student/attendance` | `AttendancePage` (Client) | Mock | Monthly calendar grid, ring chart, stat cards |
 | `/student/tutor` | `AalgoAiWorkspace` (Client) | Live | Full-page text chat; auto-connect; always-visible input; separate student agent ID |
-| `/student/certificates` | `CertificatesPage` (Client) | Mock | Earned/locked badges + downloadable certificates |
-| `/student/reports` | `ProgressReportsPage` (RSC) | Real Supabase + mock charts | Per-course progress bars; avg grades; PerformanceCharts |
+| `/student/certificates` | `CertificatesPage` (RSC) | Live | Badges + certificates computed from progress and grades |
+| `/student/reports` | `ProgressReportsPage` (RSC) | Real Supabase | Per-course progress bars; avg grades; `PerformanceCharts` from activity + grades |
+| `/student/settings` | `SettingsPage` (RSC + Client) | Live | Preferences persisted to `profiles.metadata.student_settings` |
 | `/student/messages` | `MessagesPage` (Client) | Mock | Two-panel chat (contacts + thread); send messages |
 | `/student/calendar` | `CalendarPage` (Client) | Mock | Monthly grid; click-to-see events; upcoming sidebar |
 | `/student/notifications` | `NotificationsPage` (RSC) | Real Supabase | Pending submissions list |
@@ -1299,29 +1304,30 @@ This pattern means even if the proxy gate is bypassed (impossible in production,
 | **Component** | `components/aalgo-ai/aalgo-ai-workspace.tsx` | Shared UI; `audience` prop adjusts placeholder copy |
 | **UX** | Full-page chat | Scrollable message list + fixed bottom textarea; session auto-starts on page load |
 | **Agent** | Dedicated env var | `NEXT_PUBLIC_ELEVENLABS_STUDENT_AGENT_ID` (separate from marketing voice assistant) |
+| **LMS data** | Client tools + API | Five tools call `GET /api/ai/lms/*` with cookie auth; see `docs/ELEVENLABS_LMS_SETUP.md` |
+| **Session context** | `loadTutorPageSession` + `dynamicVariables` | Name, role, academic year, role-specific counts injected at connect |
 | **Guard** | `if (!AALGO_AGENT_ID) return <ConfigError />` | Graceful when unconfigured |
-| **Guard** | `if (!AGENT_ID) return <ConfigError />` | Graceful when unconfigured |
 
 ### 15.2 AI Gaps
 
 | Gap | Risk | Recommendation |
 |-----|------|----------------|
-| **No in-LMS AI Tutor** | ~~The student dashboard has an `AiTutorCard` widget that currently renders a placeholder~~ | **Resolved:** `/student/tutor` uses ElevenLabs text chat; still needs lesson-context injection |
-| **No context injection** | The voice assistant has no knowledge of the specific student's courses or progress | Pass lesson context as a system prompt to the ElevenLabs agent |
-| **No rate limiting on AI routes** | Unlimited sessions possible; cost risk | Add Supabase Edge Function as a proxy with per-user rate limiting |
+| **No in-LMS AI Tutor** | ~~The student dashboard has an `AiTutorCard` widget that currently renders a placeholder~~ | **Resolved:** `/student/tutor` uses ElevenLabs text chat |
+| **No context injection** | ~~The voice assistant has no knowledge of the specific student's courses or progress~~ | **Partially resolved:** Client tools + `/api/ai/lms/*` return live assignments, attendance, schedule, grades; configure ElevenLabs agent per `docs/ELEVENLABS_LMS_SETUP.md` |
+| **No rate limiting on AI routes** | Unlimited sessions possible; cost risk | Add per-user rate limiting on `/api/ai/lms/*` |
 | **No conversation logging** | No record of AI interactions for moderation or quality improvement | Store session metadata in a `ai_sessions` table |
 | **No content guardrails** | ElevenLabs agent could theoretically respond inappropriately | Configure content filters in the ElevenLabs agent settings |
 
 ### 15.3 AI Architecture Recommendation
 
 ```
-Student → Authenticated LMS → Server Action verifies enrollment
-  → Injects lesson context (title, description, learning objectives)
-  → Returns ElevenLabs session token (server-generated, scoped per user)
-  → Client starts voice session with context
+Student → Authenticated LMS → loadTutorPageSession (RSC)
+  → startSession(userId, dynamicVariables, clientTools)
+  → ElevenLabs agent calls client tool → GET /api/ai/lms/* (Supabase session cookie)
+  → Role-scoped JSON returned → agent answers in natural language
 ```
 
-This prevents students from accessing AI tutor without enrollment and ensures the AI responds with lesson-relevant context.
+Configure tool names and system prompt in ElevenLabs: `docs/ELEVENLABS_LMS_SETUP.md`.
 
 ---
 
@@ -1703,7 +1709,7 @@ npx playwright install
 | Item | Location | Description | Fix |
 |------|----------|-------------|-----|
 | **Mock data in student pages** | `attendance/`, `tutor/`, `certificates/`, `messages/`, `calendar/`, `live/`, `assessments/` | These pages use hardcoded mock data — no database backing for attendance records, messages, events, or assessment results | Create database tables and replace mock data with real queries |
-| **Hardcoded badge counts** | `student-shell.tsx` | `badge: "3"` on Assignments, `badge: "2"` on Messages | Wire to real unread counts |
+| **Hardcoded badge counts** | `student-shell.tsx` | ~~`badge: "3"` / `"2"`~~ | **Resolved** — `fetchStudentNavCounts()` from assignments + messages |
 | **No security headers** | `next.config.ts` | CSP, HSTS, X-Frame-Options missing | Add `headers()` to `next.config.ts` |
 | **No rate limiting** | `api/brochure/`, `api/contact-inquiry/` | Public POST routes can be spammed | Vercel rate limiting or Upstash |
 | **N+1 query in dashboard** | `student/page.tsx`, `student/courses/page.tsx` | `fetchFirstLessonIdForCourse()` called per enrollment | Batch into single query |
@@ -1755,7 +1761,7 @@ npx playwright install
 | Feature | Impact | Notes |
 |---------|--------|-------|
 | **Live Classes (real integration)** | Core differentiation feature | UI is built with mock data; needs Jitsi/Daily.co backend |
-| **AI Tutor (real LLM)** | Student engagement | Chat UI is built; needs real LLM API (OpenAI/ElevenLabs) wired to `/api/tutor` route |
+| **AI Tutor (real LLM)** | Student engagement | **Resolved for LMS:** ElevenLabs text chat + `/api/ai/lms/*`; configure agent per `docs/ELEVENLABS_LMS_SETUP.md` |
 | **Real attendance DB table** | Academic reporting | Attendance page UI built; needs a `daily_attendance` table + admin marking flow |
 | **Real messages DB** | Communication | Messages UI built; needs a `messages` + `conversations` table + real-time subscription |
 | **Real calendar events DB** | Scheduling | Calendar page UI built; needs events sourced from live classes + assignment due dates |
